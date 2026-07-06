@@ -1,0 +1,35 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+vendor/
+
+# Build outputs
+/public/build
+/public/hot
+
+# Logs
+storage/logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Laravel
+bootstrap/cache/
+storage/
+.env.*.php
+
+# Project specific
+guides/user-guide-pos-2/
