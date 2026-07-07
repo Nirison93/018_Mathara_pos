@@ -39,69 +39,69 @@
       </div>
     </div>
 
-    <div class="min-h-screen bg-gray-50 p-6">
-      <div>
-        <!-- Header -->
-        <div class="mb-6 flex justify-between items-center">
-          <div>
-            <div class="flex items-center gap-4 mb-2">
-              <button
-                @click="goToShopsTab"
-                class="px-6 py-2.5 rounded-[5px] font-medium text-sm bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-gray-300 transition-all duration-200"
-              >
-                ← {{ $t('common.back') }}
-              </button>
-              <h1 class="text-3xl font-bold text-black">{{ $t('sales.title') }}</h1>
-            </div>
-            <p class="text-gray-400">
+    <div class="h-screen bg-gray-50 p-6 flex flex-col overflow-hidden">
+      <div class="flex flex-col flex-1 min-h-0">
+        <!-- Header + Cash Drawer Status (single compact row) -->
+        <div class="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-2.5 shadow-sm flex-shrink-0">
+          <div class="flex items-center gap-3 flex-wrap">
+            <button
+              @click="goToShopsTab"
+              class="px-3.5 py-1.5 rounded-[5px] font-medium text-xs bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-gray-300 transition-all duration-200 flex-shrink-0"
+            >
+              ← {{ $t('common.back') }}
+            </button>
+            <h1 class="text-xl font-bold text-black flex-shrink-0">{{ $t('sales.title') }}</h1>
+            <span class="hidden xl:inline text-xs text-gray-400 whitespace-nowrap">
               {{ $t('sales.invoice') }} (F9: Complete | F8: Clear | ESC: Focus Barcode)
-            </p>
+            </span>
           </div>
-          <div class="text-right">
-            <div class="text-sm text-gray-400">{{ $t('sales.invoice_no') }}</div>
-            <div class="text-2xl font-bold text-blue-400">{{ invoice_no }}</div>
+
+          <div class="flex items-center gap-4 flex-wrap">
+            <div class="text-xs text-gray-500 whitespace-nowrap">
+              {{ $t('sales.invoice_no') }}:
+              <span class="text-sm font-bold text-blue-500">{{ invoice_no }}</span>
+            </div>
+
+            <div class="text-xs text-gray-700 whitespace-nowrap">
+              <span class="font-semibold">Cash Drawer:</span>
+              <span
+                class="ml-1 rounded-full px-2 py-0.5 text-xs font-semibold"
+                :class="isCashDrawerOpen ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+              >
+                {{ isCashDrawerOpen ? 'OPEN' : 'NOT OPENED' }}
+              </span>
+            </div>
+
+            <div class="text-xs text-gray-700 whitespace-nowrap">
+              Expected: {{ page.props.currency || 'Rs.' }} {{ Number(cashDrawerSummary.expected_balance || 0).toFixed(2) }}
+            </div>
+
+            <div
+              v-if="cashDrawerSummary.difference !== null"
+              class="text-xs font-semibold whitespace-nowrap"
+              :class="Number(cashDrawerSummary.difference) === 0 ? 'text-green-700' : 'text-amber-700'"
+            >
+              Difference: {{ page.props.currency || 'Rs.' }} {{ Number(cashDrawerSummary.difference || 0).toFixed(2) }}
+            </div>
+
             <button
               v-if="isCashDrawerOpen"
               @click="showClosingModal = true"
-              class="mt-3 rounded-[5px] bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600"
+              class="rounded-[5px] bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-600 flex-shrink-0"
             >
               Close Drawer
             </button>
           </div>
         </div>
 
-        <div class="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="text-sm text-gray-700">
-              <span class="font-semibold">Cash Drawer Status:</span>
-              <span
-                class="ml-2 rounded-full px-2.5 py-1 text-xs font-semibold"
-                :class="isCashDrawerOpen ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
-              >
-                {{ isCashDrawerOpen ? 'OPEN' : 'NOT OPENED' }}
-              </span>
-            </div>
-            <div class="text-sm text-gray-700">
-              Expected: {{ page.props.currency || 'Rs.' }} {{ Number(cashDrawerSummary.expected_balance || 0).toFixed(2) }}
-            </div>
-            <div
-              v-if="cashDrawerSummary.difference !== null"
-              class="text-sm font-semibold"
-              :class="Number(cashDrawerSummary.difference) === 0 ? 'text-green-700' : 'text-amber-700'"
-            >
-              Difference: {{ page.props.currency || 'Rs.' }} {{ Number(cashDrawerSummary.difference || 0).toFixed(2) }}
-            </div>
-          </div>
-        </div>
-
         <!-- Quotation Selector - Convert Quotation to Sale -->
         <div
           v-if="quotations && quotations.length > 0"
-          class="bg-white rounded-2xl p-6 shadow-md mb-6 border border-gray-200"
+          class="bg-white rounded-xl p-3 shadow-sm mb-3 border border-gray-200 flex-shrink-0"
         >
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 items-end">
             <div class="lg:col-span-2">
-              <label class="block text-sm font-semibold text-gray-700 mb-2"
+              <label class="block text-xs font-semibold text-gray-700 mb-1"
                 >📋 Load from Quotation (Convert to Sale)</label
               >
               <select
@@ -129,12 +129,12 @@
         </div>
 
         <!-- Top Row - All Controls -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-3 flex-shrink-0">
           <!-- Barcode Scanner -->
           <div
-            class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-4 shadow-lg"
+            class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-2.5 shadow-md"
           >
-            <label class="block text-sm font-medium text-blue-100 mb-2"
+            <label class="block text-xs font-medium text-blue-100 mb-1"
               >🔍 Scan Barcode</label
             >
             <div class="flex gap-2">
@@ -144,13 +144,13 @@
                 v-model="barcodeInput"
                 @keyup.enter="addByBarcode"
                 placeholder="Scan barcode..."
-                class="flex-1 px-3 py-2 bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-300 font-mono"
+                class="flex-1 px-3 py-1.5 bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-300 font-mono text-sm"
                 autofocus
               />
               <button
                 @click="addByBarcode"
                 type="button"
-                class="px-4 bg-white hover:bg-blue-50 text-blue-700 font-semibold rounded-lg transition"
+                class="px-3 bg-white hover:bg-blue-50 text-blue-700 font-semibold rounded-lg transition text-sm"
               >
                 Add
               </button>
@@ -158,15 +158,15 @@
           </div>
 
           <!-- Customer Information -->
-          <div class="bg-white rounded-xl p-4 shadow-md border border-gray-200">
-            <label class="block text-sm font-semibold text-gray-700 mb-2"
+          <div class="bg-white rounded-xl p-2.5 shadow-sm border border-gray-200">
+            <label class="block text-xs font-semibold text-gray-700 mb-1"
               >👤 Customer & Date</label
             >
             <div class="flex gap-2">
               <div class="relative flex-1">
                 <select
                   v-model="form.customer_id"
-                  class="no-arrow w-full px-4 py-2.5 bg-white text-gray-800 border border-gray-300 rounded-[5px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm pr-12 font-medium"
+                  class="no-arrow w-full px-3 py-1.5 bg-white text-gray-800 border border-gray-300 rounded-[5px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm pr-10 font-medium"
                   title="Select Customer"
                 >
                   <option value="">-- Select Customer --</option>
@@ -181,12 +181,12 @@
                 <button
                   type="button"
                   @click="openCustomerModal"
-                  class="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full p-1 transition"
+                  class="absolute right-1.5 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full p-1 transition"
                   title="Add New Customer"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    class="w-5 h-5"
+                    class="w-4 h-4"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -203,7 +203,7 @@
               <input
                 type="date"
                 v-model="form.sale_date"
-                class="px-4 py-2.5 bg-gray-100 text-gray-800 border border-gray-300 rounded-[5px] text-sm font-medium"
+                class="px-3 py-1.5 bg-gray-100 text-gray-800 border border-gray-300 rounded-[5px] text-sm font-medium"
                 readonly
                 tabindex="-1"
                 @keydown.prevent
@@ -212,13 +212,13 @@
           </div>
 
           <!-- Customer Type / Price -->
-          <div class="bg-white rounded-xl p-4 shadow-md border border-gray-200">
-            <label class="block text-sm font-semibold text-gray-700 mb-2"
+          <div class="bg-white rounded-xl p-2.5 shadow-sm border border-gray-200">
+            <label class="block text-xs font-semibold text-gray-700 mb-1"
               >💰 Price Type</label
             >
             <div class="flex gap-2">
               <label
-                class="flex-1 flex items-center justify-center gap-2 cursor-pointer px-3 py-2 rounded-[5px] transition-all duration-200 text-sm"
+                class="flex-1 flex items-center justify-center gap-2 cursor-pointer px-3 py-1.5 rounded-[5px] transition-all duration-200 text-sm"
                 :class="
                   form.customer_type === 'retail'
                     ? 'bg-blue-700 text-white font-semibold'
@@ -236,7 +236,7 @@
                 <span>Retail</span>
               </label>
               <label
-                class="flex-1 flex items-center justify-center gap-2 cursor-pointer px-3 py-2 rounded-[5px] transition-all duration-200 text-sm"
+                class="flex-1 flex items-center justify-center gap-2 cursor-pointer px-3 py-1.5 rounded-[5px] transition-all duration-200 text-sm"
                 :class="
                   form.customer_type === 'wholesale'
                     ? 'bg-blue-700 text-white font-semibold'
@@ -259,7 +259,7 @@
         </div>
 
         <!-- Modern POS Workspace: Categories | Product Grid + Cart | Order Summary -->
-        <div class="pos-main-grid">
+        <div class="pos-main-grid flex-1 min-h-0">
           <!-- LEFT: Category Sidebar -->
           <div class="category-sidebar-card bg-white rounded-xl shadow-md border border-gray-200 p-3 flex flex-col">
             <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wide px-1 mb-2 flex-shrink-0">
@@ -399,8 +399,8 @@
           </div>
 
           <!-- Cart Items (below product grid, center column) -->
-          <div class="cart-card bg-white rounded-xl shadow-md border border-gray-200 p-4">
-              <div class="flex justify-between items-center mb-3">
+          <div class="cart-card bg-white rounded-xl shadow-md border border-gray-200 p-4 flex flex-col">
+              <div class="flex justify-between items-center mb-3 flex-shrink-0">
                 <h3 class="text-base font-semibold text-gray-800">
                   Cart Items ({{ form.items.length }})
                 </h3>
@@ -412,7 +412,7 @@
                   Clear Cart (F8)
                 </button>
               </div>
-              <div class="overflow-x-auto">
+              <div class="overflow-auto flex-1 min-h-0">
                 <table class="w-full">
                   <thead class="border-b-2 border-blue-600">
                     <tr>
@@ -2578,19 +2578,24 @@ select.no-arrow::-ms-expand {
 }
 
 /* ===== Modern POS Workspace Layout ===== */
+/* The whole page is a fixed h-screen flex column (see template), so this
+   workspace fills the remaining height exactly and never causes page scroll.
+   Each column/section scrolls internally instead. */
 .pos-main-grid {
   display: grid;
   grid-template-columns: 200px minmax(0, 1fr) 380px;
-  grid-template-rows: auto auto;
+  grid-template-rows: minmax(0, 1fr) minmax(180px, 260px);
   gap: 1rem;
   align-items: stretch;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .category-sidebar-card {
   grid-column: 1;
   grid-row: 1 / 3;
-  max-height: calc(100vh - 300px);
-  min-height: 420px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .product-browse-card {
@@ -2602,19 +2607,19 @@ select.no-arrow::-ms-expand {
 .cart-card {
   grid-column: 2;
   grid-row: 2;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .order-summary-card {
   grid-column: 3;
   grid-row: 1 / 3;
-  height: fit-content;
-  position: sticky;
-  top: 1.5rem;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .product-grid-scroll {
-  max-height: calc(100vh - 430px);
-  min-height: 320px;
+  min-height: 0;
 }
 
 .product-grid {
@@ -2685,6 +2690,7 @@ select.no-arrow::-ms-expand {
   .pos-main-grid {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto auto;
+    overflow-y: auto;
   }
   .category-sidebar-card {
     grid-column: 1;
@@ -2715,10 +2721,9 @@ select.no-arrow::-ms-expand {
   .order-summary-card {
     grid-column: 1;
     grid-row: 4;
-    position: static;
   }
   .product-grid-scroll {
-    max-height: 60vh;
+    max-height: 50vh;
   }
 }
 </style>
