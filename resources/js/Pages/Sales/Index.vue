@@ -129,7 +129,7 @@
         </div>
 
         <!-- Top Row - All Controls -->
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
           <!-- Barcode Scanner -->
           <div
             class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-4 shadow-lg"
@@ -256,34 +256,158 @@
             </div>
           </div>
 
-          <!-- Add Products Manually -->
-          <div class="bg-white rounded-xl p-4 shadow-md border border-gray-200">
-            <label class="block text-sm font-semibold text-gray-700 mb-2"
-              >➕ Add Products</label
-            >
-            <button
-              @click="openProductModal"
-              type="button"
-              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-[5px] transition"
-            >
-              🔍 Browse Products
-            </button>
-          </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <!-- Left Side - Cart -->
-          <div class="lg:col-span-2 space-y-6">
-            <!-- Cart Items -->
-            <div class="bg-white rounded-2xl p-6 shadow-md border border-gray-200">
-              <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold text-gray-800">
+        <!-- Modern POS Workspace: Categories | Product Grid + Cart | Order Summary -->
+        <div class="pos-main-grid">
+          <!-- LEFT: Category Sidebar -->
+          <div class="category-sidebar-card bg-white rounded-xl shadow-md border border-gray-200 p-3 flex flex-col">
+            <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wide px-1 mb-2 flex-shrink-0">
+              Categories
+            </h3>
+            <div class="category-list flex-1 overflow-y-auto space-y-1.5 pr-1">
+              <button
+                type="button"
+                @click="() => { productFilters.category_id = ''; filterProducts(); }"
+                class="category-btn"
+                :class="productFilters.category_id === '' ? 'category-btn-active' : 'category-btn-inactive'"
+              >
+                <span class="text-lg leading-none">🗂️</span>
+                <span>All Products</span>
+              </button>
+              <button
+                v-for="category in categories"
+                :key="category.id"
+                type="button"
+                @click="() => { productFilters.category_id = category.id; filterProducts(); }"
+                class="category-btn"
+                :class="productFilters.category_id == category.id ? 'category-btn-active' : 'category-btn-inactive'"
+              >
+                <span class="text-lg leading-none">📦</span>
+                <span class="truncate">{{ category.name }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- CENTER: Product Browsing -->
+          <div class="product-browse-card bg-white rounded-xl shadow-md border border-gray-200 p-4 flex flex-col">
+            <div class="flex items-center gap-2 mb-3 flex-shrink-0">
+              <input
+                type="text"
+                v-model="productFilters.search"
+                @input="filterProducts"
+                placeholder="🔍 Search products by name or barcode..."
+                class="flex-1 px-3 py-2.5 bg-gray-50 text-gray-800 border border-gray-200 rounded-[5px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all text-sm"
+              />
+              <button
+                type="button"
+                @click="openProductModal"
+                title="Advanced filters (brand, type, discount, stock)"
+                class="px-3 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-[5px] transition font-medium text-sm flex-shrink-0"
+              >
+                ⚙️ Filters
+              </button>
+            </div>
+
+            <div class="product-grid-scroll flex-1 overflow-y-auto">
+              <div class="product-grid">
+                <div
+                  v-for="product in paginatedProducts"
+                  :key="product.id"
+                  @click="addToCart(product)"
+                  class="product-card"
+                  :class="{ 'product-card-active': isProductInCart(product.id) }"
+                >
+                  <div
+                    v-if="isLowStock(product)"
+                    class="absolute top-1.5 left-1.5 bg-amber-500 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-full z-10"
+                  >
+                    Low
+                  </div>
+                  <div
+                    v-if="isProductInCart(product.id)"
+                    class="absolute top-1.5 right-1.5 bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full z-10 min-w-[18px] text-center"
+                  >
+                    {{ getProductCartQuantity(product.id) }}
+                  </div>
+                  <div class="aspect-square bg-gray-50 flex items-center justify-center overflow-hidden rounded-t-[10px]">
+                    <img
+                      v-if="product.image"
+                      :src="'/storage/' + product.image"
+                      :alt="product.name"
+                      class="w-full h-full object-cover"
+                      @error="$event.target.src = '/storage/products/default.png'"
+                    />
+                    <span v-else class="text-3xl text-gray-300">📦</span>
+                  </div>
+                  <div class="p-2">
+                    <h4 class="text-gray-900 font-semibold text-xs mb-1 truncate" :title="product.name">
+                      {{ product.name }}
+                    </h4>
+                    <div class="flex items-center justify-between">
+                      <span class="text-blue-700 font-bold text-sm">
+                        {{ page.props.currency || "Rs." }}{{ parseFloat(getCurrentPrice(product) || 0).toFixed(2) }}
+                      </span>
+                    </div>
+                    <div class="mt-1 text-[11px] text-gray-500 flex items-center justify-between">
+                      <span>Stock:</span>
+                      <span
+                        class="font-semibold"
+                        :class="isLowStock(product) ? 'text-amber-600' : 'text-gray-700'"
+                      >
+                        {{ product.shop_quantity_in_sales_unit }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- No products message -->
+              <div v-if="filteredProducts.length === 0" class="text-center py-16">
+                <div class="text-5xl mb-3 text-gray-300">📭</div>
+                <p class="text-gray-500">{{ $t('products.no_products') }}</p>
+                <p class="text-gray-400 text-sm mt-1">Try adjusting your search or category</p>
+              </div>
+            </div>
+
+            <!-- Compact Pagination -->
+            <div
+              v-if="filteredProducts.length > 0"
+              class="flex items-center justify-between gap-2 pt-3 mt-2 border-t border-gray-100 flex-shrink-0"
+            >
+              <span class="text-xs text-gray-500">
+                {{ startIndex + 1 }}-{{ Math.min(endIndex, filteredProducts.length) }} of {{ filteredProducts.length }}
+              </span>
+              <div class="flex items-center gap-1.5">
+                <button
+                  @click="prevPage"
+                  :disabled="currentPage === 1"
+                  class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300 disabled:cursor-not-allowed text-gray-700 rounded-[5px] transition font-medium text-xs"
+                >
+                  ← Prev
+                </button>
+                <span class="text-xs text-gray-600 px-1">{{ currentPage }} / {{ totalPages }}</span>
+                <button
+                  @click="nextPage"
+                  :disabled="currentPage === totalPages"
+                  class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-100 disabled:text-gray-300 disabled:cursor-not-allowed text-white rounded-[5px] transition font-medium text-xs"
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cart Items (below product grid, center column) -->
+          <div class="cart-card bg-white rounded-xl shadow-md border border-gray-200 p-4">
+              <div class="flex justify-between items-center mb-3">
+                <h3 class="text-base font-semibold text-gray-800">
                   Cart Items ({{ form.items.length }})
                 </h3>
                 <button
                   v-if="form.items.length > 0"
                   @click="clearCart"
-                  class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-[5px] transition font-medium"
+                  class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded-[5px] transition font-medium"
                 >
                   Clear Cart (F8)
                 </button>
@@ -425,15 +549,11 @@
                   </tbody>
                 </table>
               </div>
-            </div>
           </div>
 
-          <!-- Right Side - Bill Summary -->
-          <div class="lg:col-span-1">
-            <div
-              class="bg-white rounded-2xl p-6 shadow-md border border-gray-200 sticky top-6"
-            >
-              <h3 class="text-lg font-semibold text-white mb-6">Bill Summary</h3>
+          <!-- RIGHT: Order Summary / Payment Panel -->
+          <div class="order-summary-card bg-white rounded-xl shadow-md border border-gray-200 p-5">
+              <h3 class="text-lg font-bold text-gray-800 mb-5 pb-3 border-b border-gray-100">Bill Summary</h3>
 
               <!-- Calculations -->
               <div class="space-y-4">
@@ -471,8 +591,8 @@
                   />
                 </div>
 
-                <div class="pt-4 border-t-2 border-gray-700">
-                  <div class="flex justify-between text-white text-xl font-bold">
+                <div class="pt-4 border-t-2 border-gray-200">
+                  <div class="flex justify-between text-gray-800 text-xl font-bold">
                     <span>Net Amount:</span>
                     <span class="text-blue-400"
                       >({{ page.props.currency || "Rs." }})
@@ -578,7 +698,6 @@
                 <p>Keyboard Shortcuts:</p>
                 <p>F9: Complete Sale | F8: Clear Cart | ESC: Focus Barcode</p>
               </div>
-            </div>
           </div>
         </div>
       </div>
@@ -2431,6 +2550,14 @@ onMounted(() => {
   barcodeField.value?.focus();
   window.addEventListener("keydown", handleKeyDown, true);
 
+  // Populate the always-visible product grid using the existing filter logic
+  filterProducts();
+  props.products.forEach((product) => {
+    if (!productQuantities.value[product.id]) {
+      productQuantities.value[product.id] = 1;
+    }
+  });
+
   // Do not set a default customer; keep it empty to show '-- Select Customer --'
 });
 
@@ -2448,5 +2575,150 @@ select.no-arrow {
 }
 select.no-arrow::-ms-expand {
   display: none;
+}
+
+/* ===== Modern POS Workspace Layout ===== */
+.pos-main-grid {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr) 380px;
+  grid-template-rows: auto auto;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.category-sidebar-card {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  max-height: calc(100vh - 300px);
+  min-height: 420px;
+}
+
+.product-browse-card {
+  grid-column: 2;
+  grid-row: 1;
+  min-height: 0;
+}
+
+.cart-card {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.order-summary-card {
+  grid-column: 3;
+  grid-row: 1 / 3;
+  height: fit-content;
+  position: sticky;
+  top: 1.5rem;
+}
+
+.product-grid-scroll {
+  max-height: calc(100vh - 430px);
+  min-height: 320px;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.75rem;
+}
+
+/* Category sidebar buttons */
+.category-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+.category-btn-inactive {
+  background-color: #fff;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+.category-btn-inactive:hover {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+.category-btn-active {
+  background-color: #2563eb;
+  color: #fff;
+  border: 1px solid #2563eb;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+}
+
+/* Product cards */
+.product-card {
+  position: relative;
+  background: #fff;
+  border: 1px solid #f3f4f6;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+.product-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #d1d5db;
+}
+.product-card:active {
+  transform: scale(0.97);
+}
+.product-card-active {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px #2563eb;
+}
+
+@media (max-width: 1399px) {
+  .pos-main-grid {
+    grid-template-columns: 180px minmax(0, 1fr) 340px;
+  }
+}
+
+@media (max-width: 1023px) {
+  .pos-main-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto;
+  }
+  .category-sidebar-card {
+    grid-column: 1;
+    grid-row: 1;
+    max-height: 220px;
+    min-height: 0;
+  }
+  .category-list {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 0.5rem;
+  }
+  .category-btn {
+    width: auto;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .product-browse-card {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .cart-card {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .order-summary-card {
+    grid-column: 1;
+    grid-row: 4;
+    position: static;
+  }
+  .product-grid-scroll {
+    max-height: 60vh;
+  }
 }
 </style>
