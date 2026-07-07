@@ -52,7 +52,7 @@
             </button>
             <h1 class="text-xl font-bold text-black flex-shrink-0">{{ $t('sales.title') }}</h1>
             <span class="hidden xl:inline text-xs text-gray-400 whitespace-nowrap">
-              {{ $t('sales.invoice') }} (F9: Complete | F10: Payment | F8: Clear | ESC: Focus Barcode)
+              {{ $t('sales.invoice') }} (F9: Complete | F10: Payment | F8: Clear | ESC: Focus Barcode | Shift: Focus Search)
             </span>
           </div>
 
@@ -293,6 +293,7 @@
           <div class="product-browse-card bg-white rounded-xl shadow-md border border-gray-200 p-4 flex flex-col">
             <div class="flex items-center gap-1.5 mb-2.5 flex-shrink-0">
               <input
+                ref="productSearchField"
                 type="text"
                 v-model="productFilters.search"
                 @input="filterProducts"
@@ -681,7 +682,7 @@
               <!-- Quick Actions -->
               <div class="mt-2 text-[10px] text-gray-400 text-center">
                 <p>Keyboard Shortcuts:</p>
-                <p>F9: Complete Sale | F10: Add Payment | F8: Clear Cart | ESC: Focus Barcode</p>
+                <p>F9: Complete Sale | F10: Add Payment | F8: Clear Cart | ESC: Focus Barcode | Shift: Focus Search</p>
               </div>
           </div>
         </div>
@@ -1349,6 +1350,7 @@ const selectedProduct = ref(null);
 const selectedQuantity = ref(1);
 const barcodeInput = ref("");
 const barcodeField = ref(null);
+const productSearchField = ref(null);
 const showSuccessModal = ref(false);
 const showPaymentModal = ref(false);
 const showProductModal = ref(false);
@@ -2521,6 +2523,24 @@ const handleKeyDown = (event) => {
   const isESC = event.key === 'Escape' ||
                 event.keyCode === 27 ||
                 event.code === 'Escape';
+
+  // Check if Shift is pressed (by itself, not as part of a Shift+key combo)
+  const isShift = (event.key === 'Shift' || event.keyCode === 16 || event.code === 'ShiftLeft' || event.code === 'ShiftRight')
+                  && !event.ctrlKey && !event.altKey && !event.metaKey;
+
+  if (isShift) {
+    // Don't steal focus while the user is actively typing/selecting in any form field
+    const activeElement = document.activeElement;
+    const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement?.tagName);
+
+    if (!isInputField && productSearchField.value) {
+      event.preventDefault();
+      productSearchField.value.focus();
+      productSearchField.value.select();
+    }
+
+    return;
+  }
 
   if (isF8) {
     // Completely prevent default and stop propagation

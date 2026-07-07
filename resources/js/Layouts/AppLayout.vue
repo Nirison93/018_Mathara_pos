@@ -335,6 +335,10 @@ onMounted(() => {
             <span class="font-mono text-xs font-bold px-2 py-1 rounded bg-gray-800 text-white">ESC</span>
             <span class="text-sm text-gray-700 dark:text-gray-200">Focus Barcode</span>
           </div>
+          <div class="flex items-center justify-between rounded-lg bg-gray-50 dark:bg-gray-700 px-3 py-2">
+            <span class="font-mono text-xs font-bold px-2 py-1 rounded bg-gray-800 text-white">Shift</span>
+            <span class="text-sm text-gray-700 dark:text-gray-200">Focus Product Search</span>
+          </div>
         </div>
 
         <button
