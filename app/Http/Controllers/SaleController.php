@@ -51,10 +51,24 @@ class SaleController extends Controller
             ->orderBy('id', 'desc')
             ->get();
 
+        // Total quantity sold per category (all-time, excluding returns), used to
+        // rank the POS category sidebar with the best-selling categories first.
+        $categorySoldQuantities = DB::table('sales_products')
+            ->join('products', 'sales_products.product_id', '=', 'products.id')
+            ->where('sales_products.is_return', false)
+            ->whereNotNull('products.category_id')
+            ->selectRaw('products.category_id as category_id, SUM(sales_products.quantity) as total_qty')
+            ->groupBy('products.category_id')
+            ->pluck('total_qty', 'category_id');
+
         $categories = Category::with('parent')
             ->select('id', 'name', 'parent_id')
-            ->orderBy('id', 'desc')
-            ->get();
+            ->get()
+            ->each(function ($category) use ($categorySoldQuantities) {
+                $category->total_sold = (int) ($categorySoldQuantities[$category->id] ?? 0);
+            })
+            ->sortByDesc('total_sold')
+            ->values();
 
         $types = Type::select('id', 'name')
             ->orderBy('id', 'desc')

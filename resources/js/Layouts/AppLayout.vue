@@ -6,6 +6,7 @@ import LanguageSwitcher from "@/Components/LanguageSwitcher.vue";
 import Modal from "@/Components/Modal.vue";
 import { Link } from "@inertiajs/vue3";
 import { useI18n } from "vue-i18n";
+import { useDashboardNavigation } from "@/composables/useDashboardNavigation";
 
 defineProps({
   title: String,
@@ -14,6 +15,7 @@ defineProps({
 useI18n();
 const showingNavigationDropdown = ref(false);
 const isDarkMode = ref(false);
+const { goToShopsTab } = useDashboardNavigation();
 const showShortcutsModal = ref(false);
 
 const applyTheme = (enabled) => {
@@ -117,6 +119,15 @@ onMounted(() => {
             </div>
 
             <div class="hidden sm:ms-4 sm:flex sm:items-center gap-2.5">
+              <!-- Back -->
+              <button
+                @click="goToShopsTab"
+                type="button"
+                class="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-lg border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold transition-all duration-200 hover:shadow-md hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                ← {{ $t('common.back') }}
+              </button>
+
               <!-- Keyboard Shortcuts -->
               <button
                 @click="showShortcutsModal = true"
@@ -195,6 +206,15 @@ onMounted(() => {
 
             <!-- Hamburger (mobile) -->
             <div class="-me-2 flex items-center sm:hidden gap-2">
+              <button
+                @click="goToShopsTab"
+                type="button"
+                class="inline-flex items-center justify-center rounded-lg p-2.5 text-gray-600 dark:text-gray-300 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                :title="$t('common.back')"
+              >
+                <span class="text-lg">←</span>
+              </button>
+
               <button
                 @click="showShortcutsModal = true"
                 type="button"
@@ -334,6 +354,10 @@ onMounted(() => {
           <div class="flex items-center justify-between rounded-lg bg-gray-50 dark:bg-gray-700 px-3 py-2">
             <span class="font-mono text-xs font-bold px-2 py-1 rounded bg-gray-800 text-white">ESC</span>
             <span class="text-sm text-gray-700 dark:text-gray-200">Focus Barcode</span>
+          </div>
+          <div class="flex items-center justify-between rounded-lg bg-gray-50 dark:bg-gray-700 px-3 py-2">
+            <span class="font-mono text-xs font-bold px-2 py-1 rounded bg-gray-800 text-white">Shift</span>
+            <span class="text-sm text-gray-700 dark:text-gray-200">Focus Product Search</span>
           </div>
         </div>
 
