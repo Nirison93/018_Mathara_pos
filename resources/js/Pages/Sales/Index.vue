@@ -398,7 +398,7 @@
             </div>
           </div>
 
-          <!-- Cart Items (below product grid, center column) -->
+          <!-- Cart Items (right column, above Order Summary) -->
           <div class="cart-card bg-white rounded-xl shadow-md border border-gray-200 p-4 flex flex-col">
               <div class="flex justify-between items-center mb-3 flex-shrink-0">
                 <h3 class="text-base font-semibold text-gray-800">
@@ -2584,7 +2584,7 @@ select.no-arrow::-ms-expand {
 .pos-main-grid {
   display: grid;
   grid-template-columns: 200px minmax(0, 1fr) 380px;
-  grid-template-rows: minmax(0, 1fr) minmax(180px, 260px);
+  grid-template-rows: minmax(160px, 260px) minmax(0, 1fr);
   gap: 1rem;
   align-items: stretch;
   min-height: 0;
@@ -2600,20 +2600,21 @@ select.no-arrow::-ms-expand {
 
 .product-browse-card {
   grid-column: 2;
-  grid-row: 1;
+  grid-row: 1 / 3;
   min-height: 0;
 }
 
+/* Cart Items sits above the Order Summary in the right-hand column */
 .cart-card {
-  grid-column: 2;
-  grid-row: 2;
+  grid-column: 3;
+  grid-row: 1;
   min-height: 0;
   overflow: hidden;
 }
 
 .order-summary-card {
   grid-column: 3;
-  grid-row: 1 / 3;
+  grid-row: 2;
   min-height: 0;
   overflow-y: auto;
 }
