@@ -3,6 +3,7 @@ import { ref, watch, onMounted, watchEffect } from "vue";
 import { usePage } from "@inertiajs/vue3";
 import ResponsiveNavLink from "@/Components/ResponsiveNavLink.vue";
 import LanguageSwitcher from "@/Components/LanguageSwitcher.vue";
+import Modal from "@/Components/Modal.vue";
 import { Link } from "@inertiajs/vue3";
 import { useI18n } from "vue-i18n";
 
@@ -13,6 +14,7 @@ defineProps({
 useI18n();
 const showingNavigationDropdown = ref(false);
 const isDarkMode = ref(false);
+const showShortcutsModal = ref(false);
 
 const applyTheme = (enabled) => {
   document.documentElement.classList.toggle("dark", enabled);
@@ -115,6 +117,16 @@ onMounted(() => {
             </div>
 
             <div class="hidden sm:ms-4 sm:flex sm:items-center gap-2.5">
+              <!-- Keyboard Shortcuts -->
+              <button
+                @click="showShortcutsModal = true"
+                type="button"
+                title="Keyboard Shortcuts"
+                class="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-600 text-gray-600 dark:text-gray-300 transition-all duration-200 hover:shadow-md hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <span class="text-sm">⌨️</span>
+              </button>
+
               <!-- Language Switcher -->
               <LanguageSwitcher />
 
@@ -183,6 +195,15 @@ onMounted(() => {
 
             <!-- Hamburger (mobile) -->
             <div class="-me-2 flex items-center sm:hidden gap-2">
+              <button
+                @click="showShortcutsModal = true"
+                type="button"
+                title="Keyboard Shortcuts"
+                class="inline-flex items-center justify-center rounded-lg p-2.5 text-gray-600 dark:text-gray-300 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <span class="text-lg">⌨️</span>
+              </button>
+
               <LanguageSwitcher />
 
               <button
@@ -277,5 +298,52 @@ onMounted(() => {
         </div>
       </footer>
     </div>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <Modal :show="showShortcutsModal" @close="showShortcutsModal = false" max-width="sm">
+      <div class="p-6 bg-white dark:bg-gray-800">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <span>⌨️</span> Keyboard Shortcuts
+          </h2>
+          <button
+            @click="showShortcutsModal = false"
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl leading-none"
+          >
+            ✕
+          </button>
+        </div>
+
+        <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
+          Available on the Sales (POS) screen.
+        </p>
+
+        <div class="space-y-2">
+          <div class="flex items-center justify-between rounded-lg bg-gray-50 dark:bg-gray-700 px-3 py-2">
+            <span class="font-mono text-xs font-bold px-2 py-1 rounded bg-gray-800 text-white">F10</span>
+            <span class="text-sm text-gray-700 dark:text-gray-200">Add Payment</span>
+          </div>
+          <div class="flex items-center justify-between rounded-lg bg-gray-50 dark:bg-gray-700 px-3 py-2">
+            <span class="font-mono text-xs font-bold px-2 py-1 rounded bg-gray-800 text-white">F9</span>
+            <span class="text-sm text-gray-700 dark:text-gray-200">Complete Sale</span>
+          </div>
+          <div class="flex items-center justify-between rounded-lg bg-gray-50 dark:bg-gray-700 px-3 py-2">
+            <span class="font-mono text-xs font-bold px-2 py-1 rounded bg-gray-800 text-white">F8</span>
+            <span class="text-sm text-gray-700 dark:text-gray-200">Clear Cart</span>
+          </div>
+          <div class="flex items-center justify-between rounded-lg bg-gray-50 dark:bg-gray-700 px-3 py-2">
+            <span class="font-mono text-xs font-bold px-2 py-1 rounded bg-gray-800 text-white">ESC</span>
+            <span class="text-sm text-gray-700 dark:text-gray-200">Focus Barcode</span>
+          </div>
+        </div>
+
+        <button
+          @click="showShortcutsModal = false"
+          class="mt-5 w-full py-2.5 rounded-lg bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold transition"
+        >
+          Close
+        </button>
+      </div>
+    </Modal>
   </div>
 </template>
