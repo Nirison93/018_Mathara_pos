@@ -78,35 +78,35 @@ onMounted(() => {
   <div>
     <div class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 transition-colors duration-300">
       <nav class="bg-white border-b border-gray-200 shadow-md dark:bg-gray-900 dark:border-gray-700">
-        <div class="mx-auto max-w px-6 sm:px-8 lg:px-10">
-          <div class="flex h-20 justify-between items-center">
+        <div class="mx-auto max-w px-4 sm:px-6 lg:px-8">
+          <div class="flex h-14 justify-between items-center">
             <div class="flex">
-              <div class="flex shrink-0 items-center gap-4">
+              <div class="flex shrink-0 items-center gap-2.5">
                 <Link
                   :href="route('dashboard')"
-                  class="flex items-center gap-3 hover:opacity-80 transition-opacity duration-200"
+                  class="flex items-center gap-2 hover:opacity-80 transition-opacity duration-200"
                 >
                   <img
                     v-if="$page.props.appSettings && $page.props.appSettings.app_logo"
                     :src="`/storage/${$page.props.appSettings.app_logo}`"
                     alt="App Logo"
-                    class="block h-12 w-auto"
+                    class="block h-8 w-auto"
                   />
                   <img
                     v-else-if="$page.props.companyInfo && $page.props.companyInfo.logo"
                     :src="`/storage/${$page.props.companyInfo.logo}`"
                     alt="Company Logo"
-                    class="block h-12 w-auto"
+                    class="block h-8 w-auto"
                   />
                   <span
                     v-if="$page.props.appSettings && $page.props.appSettings.app_name"
-                    class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent"
+                    class="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent"
                   >
                     {{ $page.props.appSettings.app_name }}
                   </span>
                   <span
                     v-else-if="$page.props.companyInfo && $page.props.companyInfo.company_name"
-                    class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent"
+                    class="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent"
                   >
                     {{ $page.props.companyInfo.company_name }}
                   </span>
@@ -114,7 +114,7 @@ onMounted(() => {
               </div>
             </div>
 
-            <div class="hidden sm:ms-6 sm:flex sm:items-center gap-4">
+            <div class="hidden sm:ms-4 sm:flex sm:items-center gap-2.5">
               <!-- Language Switcher -->
               <LanguageSwitcher />
 
@@ -124,45 +124,45 @@ onMounted(() => {
                 type="button"
                 :aria-pressed="isDarkMode"
                 :aria-label="isDarkMode ? $t('nav.switch_to_light') : $t('nav.switch_to_dark')"
-                class="inline-flex items-center h-12 px-3 rounded-lg border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-600 transition-all duration-200 hover:shadow-md"
+                class="inline-flex items-center h-9 px-2.5 rounded-lg border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-600 transition-all duration-200 hover:shadow-md"
               >
                 <div
-                  class="relative w-12 h-6 rounded-full transition-colors duration-200"
+                  class="relative w-9 h-5 rounded-full transition-colors duration-200"
                   :class="isDarkMode ? 'bg-gray-700' : 'bg-gray-300'"
                 >
                   <span
-                    class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transform transition-transform duration-200"
-                    :class="isDarkMode ? 'translate-x-6' : 'translate-x-0'"
+                    class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-200"
+                    :class="isDarkMode ? 'translate-x-4' : 'translate-x-0'"
                   ></span>
                 </div>
-                <span class="ml-3 text-sm font-semibold text-gray-700 dark:text-gray-200">
+                <span class="ml-2 text-xs font-semibold text-gray-700 dark:text-gray-200">
                   {{ isDarkMode ? $t('nav.dark') : $t('nav.light') }}
                 </span>
               </button>
 
               <!-- User Profile Display -->
               <div
-                class="inline-flex items-center gap-3 h-12 px-4 rounded-lg border border-gray-200 bg-gradient-to-r from-white to-gray-50 shadow-sm dark:border-gray-600 dark:from-gray-800 dark:to-gray-700"
+                class="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-gray-200 bg-gradient-to-r from-white to-gray-50 shadow-sm dark:border-gray-600 dark:from-gray-800 dark:to-gray-700"
               >
                 <div
-                  class="flex items-center justify-center w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-sm shadow-md"
+                  class="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-xs shadow-md"
                 >
                   {{ $page.props.auth.user.name.charAt(0).toUpperCase() }}
                 </div>
                 <div class="flex flex-col justify-center">
-                  <span class="text-sm font-semibold text-gray-900 dark:text-white leading-tight">
+                  <span class="text-xs font-semibold text-gray-900 dark:text-white leading-tight">
                     {{ $page.props.auth.user.name }}
                   </span>
-                  <span class="text-xs text-gray-500 dark:text-gray-300 leading-tight">{{ $t('nav.logged_in') }}</span>
+                  <span class="text-[10px] text-gray-500 dark:text-gray-300 leading-tight">{{ $t('nav.logged_in') }}</span>
                 </div>
               </div>
 
               <!-- POS Button -->
               <Link
                 :href="route('sales.index')"
-                class="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg border border-blue-600 bg-blue-600 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-blue-700 hover:border-blue-700 hover:shadow-lg hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                class="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg border border-blue-600 bg-blue-600 text-xs font-semibold text-white shadow-sm transition-all duration-200 hover:bg-blue-700 hover:border-blue-700 hover:shadow-lg hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
-                <span class="text-lg">🏪</span>
+                <span class="text-sm">🏪</span>
                 <span>{{ $t('nav.pos') }}</span>
               </Link>
 
@@ -171,9 +171,9 @@ onMounted(() => {
                 :href="route('logout')"
                 method="post"
                 as="button"
-                class="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg border border-gray-600 bg-gray-600 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-gray-700 hover:border-gray-700 hover:shadow-lg hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                class="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg border border-gray-600 bg-gray-600 text-xs font-semibold text-white shadow-sm transition-all duration-200 hover:bg-gray-700 hover:border-gray-700 hover:shadow-lg hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
               >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>

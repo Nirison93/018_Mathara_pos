@@ -291,28 +291,28 @@
 
           <!-- CENTER: Product Browsing -->
           <div class="product-browse-card bg-white rounded-xl shadow-md border border-gray-200 p-4 flex flex-col">
-            <div class="flex items-center gap-2 mb-3 flex-shrink-0">
+            <div class="flex items-center gap-1.5 mb-2.5 flex-shrink-0">
               <input
                 type="text"
                 v-model="productFilters.search"
                 @input="filterProducts"
                 placeholder="🔍 Search products by name or barcode..."
-                class="flex-1 px-3 py-2.5 bg-gray-50 text-gray-800 border border-gray-200 rounded-[5px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all text-sm"
+                class="flex-1 px-3 py-2 bg-gray-50 text-gray-800 border border-gray-200 rounded-[5px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all text-sm"
               />
               <button
                 type="button"
                 @click="openProductModal"
                 title="Advanced filters (brand, type, discount, stock)"
-                class="px-3 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-[5px] transition font-medium text-sm flex-shrink-0"
+                class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-[5px] transition font-medium text-sm flex-shrink-0"
               >
                 ⚙️ Filters
               </button>
             </div>
 
-            <div class="product-grid-scroll flex-1 overflow-y-auto">
+            <div ref="productGridScrollEl" class="product-grid-scroll flex-1 overflow-y-auto" @scroll="onProductGridScroll">
               <div class="product-grid">
                 <div
-                  v-for="product in paginatedProducts"
+                  v-for="product in infiniteScrollProducts"
                   :key="product.id"
                   @click="addToCart(product)"
                   class="product-card"
@@ -370,31 +370,15 @@
               </div>
             </div>
 
-            <!-- Compact Pagination -->
+            <!-- Infinite scroll status (loads more automatically on scroll, no click needed) -->
             <div
               v-if="filteredProducts.length > 0"
-              class="flex items-center justify-between gap-2 pt-3 mt-2 border-t border-gray-100 flex-shrink-0"
+              class="flex items-center justify-center gap-2 pt-2 mt-1 border-t border-gray-100 flex-shrink-0"
             >
               <span class="text-xs text-gray-500">
-                {{ startIndex + 1 }}-{{ Math.min(endIndex, filteredProducts.length) }} of {{ filteredProducts.length }}
+                Showing {{ infiniteScrollProducts.length }} of {{ filteredProducts.length }}
+                <span v-if="hasMoreProducts">· scroll for more</span>
               </span>
-              <div class="flex items-center gap-1.5">
-                <button
-                  @click="prevPage"
-                  :disabled="currentPage === 1"
-                  class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300 disabled:cursor-not-allowed text-gray-700 rounded-[5px] transition font-medium text-xs"
-                >
-                  ← Prev
-                </button>
-                <span class="text-xs text-gray-600 px-1">{{ currentPage }} / {{ totalPages }}</span>
-                <button
-                  @click="nextPage"
-                  :disabled="currentPage === totalPages"
-                  class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-100 disabled:text-gray-300 disabled:cursor-not-allowed text-white rounded-[5px] transition font-medium text-xs"
-                >
-                  Next →
-                </button>
-              </div>
             </div>
           </div>
 
@@ -1308,7 +1292,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { Head, useForm, router, usePage } from "@inertiajs/vue3";
 import { useI18n } from "vue-i18n";
 const page = usePage();
-import { ref, computed, onMounted,onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
 import { logActivity } from "@/composables/useActivityLog";
 import Modal from "@/Components/Modal.vue";
 import CustomerCreateModal from "@/Pages/Customers/Components/CustomerCreateModal.vue";
@@ -1508,6 +1492,46 @@ const filteredProducts = ref([]);
 const currentPage = ref(1);
 const itemsPerPage = ref(24);
 const productQuantities = ref({});
+
+// Infinite scroll for the always-visible product grid (embedded workspace only;
+// the Advanced Filters modal keeps its existing click-based Prev/Next pagination).
+const embeddedVisibleCount = ref(itemsPerPage.value);
+const productGridScrollEl = ref(null);
+const infiniteScrollProducts = computed(() => {
+  return filteredProducts.value.slice(0, embeddedVisibleCount.value);
+});
+const hasMoreProducts = computed(() => {
+  return embeddedVisibleCount.value < filteredProducts.value.length;
+});
+const onProductGridScroll = (event) => {
+  const el = event.target;
+  if (!hasMoreProducts.value) return;
+  if (el.scrollTop + el.clientHeight >= el.scrollHeight - 150) {
+    embeddedVisibleCount.value = Math.min(
+      embeddedVisibleCount.value + itemsPerPage.value,
+      filteredProducts.value.length
+    );
+  }
+};
+// If the first batch doesn't fill/overflow the grid area (e.g. a tall screen or
+// a narrow result set), there is no scrollbar for onProductGridScroll to react to,
+// so keep loading batches until it overflows or every matching product is shown.
+const fillProductGridIfNeeded = async () => {
+  await nextTick();
+  const el = productGridScrollEl.value;
+  if (!el) return;
+  while (hasMoreProducts.value && el.scrollHeight <= el.clientHeight + 4) {
+    embeddedVisibleCount.value = Math.min(
+      embeddedVisibleCount.value + itemsPerPage.value,
+      filteredProducts.value.length
+    );
+    await nextTick();
+  }
+};
+watch(filteredProducts, () => {
+  embeddedVisibleCount.value = itemsPerPage.value;
+  fillProductGridIfNeeded();
+});
 
 // Calculations
 // Original total before product discounts
@@ -2552,6 +2576,7 @@ onMounted(() => {
 
   // Populate the always-visible product grid using the existing filter logic
   filterProducts();
+  fillProductGridIfNeeded();
   props.products.forEach((product) => {
     if (!productQuantities.value[product.id]) {
       productQuantities.value[product.id] = 1;
@@ -2583,7 +2608,7 @@ select.no-arrow::-ms-expand {
    Each column/section scrolls internally instead. */
 .pos-main-grid {
   display: grid;
-  grid-template-columns: 200px minmax(0, 1fr) 380px;
+  grid-template-columns: 200px minmax(0, 1fr) 520px;
   grid-template-rows: minmax(160px, 260px) minmax(0, 1fr);
   gap: 1rem;
   align-items: stretch;
@@ -2626,7 +2651,7 @@ select.no-arrow::-ms-expand {
 .product-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
 
 /* Category sidebar buttons */
@@ -2683,7 +2708,7 @@ select.no-arrow::-ms-expand {
 
 @media (max-width: 1399px) {
   .pos-main-grid {
-    grid-template-columns: 180px minmax(0, 1fr) 340px;
+    grid-template-columns: 180px minmax(0, 1fr) 440px;
   }
 }
 
