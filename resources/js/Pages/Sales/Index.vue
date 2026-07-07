@@ -52,7 +52,7 @@
             </button>
             <h1 class="text-xl font-bold text-black flex-shrink-0">{{ $t('sales.title') }}</h1>
             <span class="hidden xl:inline text-xs text-gray-400 whitespace-nowrap">
-              {{ $t('sales.invoice') }} (F9: Complete | F8: Clear | ESC: Focus Barcode)
+              {{ $t('sales.invoice') }} (F9: Complete | F10: Payment | F8: Clear | ESC: Focus Barcode)
             </span>
           </div>
 
@@ -536,12 +536,12 @@
           </div>
 
           <!-- RIGHT: Order Summary / Payment Panel -->
-          <div class="order-summary-card bg-white rounded-xl shadow-md border border-gray-200 p-5">
-              <h3 class="text-lg font-bold text-gray-800 mb-5 pb-3 border-b border-gray-100">Bill Summary</h3>
+          <div class="order-summary-card bg-white rounded-xl shadow-md border border-gray-200 p-3.5">
+              <h3 class="text-base font-bold text-gray-800 mb-3 pb-2 border-b border-gray-100">Bill Summary</h3>
 
               <!-- Calculations -->
-              <div class="space-y-4">
-                <div class="flex justify-between text-black text-lg font-bold">
+              <div class="space-y-2.5">
+                <div class="flex justify-between text-black text-base font-bold">
                   <span>Sub Total:</span>
 
                   <span class="font-semibold"
@@ -561,8 +561,8 @@
                   >
                 </div>
 
-                <div>
-                  <label class="block text-sm font-medium text-gray-400 mb-2"
+                <div class="flex items-center justify-between gap-3">
+                  <label class="text-xs font-medium text-gray-400"
                     >Custom Discount ({{ page.props.currency || "Rs." }})</label
                   >
                   <input
@@ -570,13 +570,13 @@
                     v-model.number="form.discount"
                     min="0"
                     :max="totalAmount"
-                    class="w-[100px] px-4 py-2 text-black rounded-lg focus:ring-2 focus:ring-blue-500"
+                    class="w-[100px] px-3 py-1.5 text-black rounded-lg focus:ring-2 focus:ring-blue-500 border border-gray-300 text-right"
                     placeholder="0.00"
                   />
                 </div>
 
-                <div class="pt-4 border-t-2 border-gray-200">
-                  <div class="flex justify-between text-gray-800 text-xl font-bold">
+                <div class="pt-2.5 border-t-2 border-gray-200">
+                  <div class="flex justify-between text-gray-800 text-lg font-bold">
                     <span>Net Amount:</span>
                     <span class="text-blue-400"
                       >({{ page.props.currency || "Rs." }})
@@ -586,18 +586,18 @@
                 </div>
 
                 <!-- Multiple Payments List -->
-                <div v-if="form.payments.length > 0" class="bg-gray-200 rounded-lg p-3">
-                  <div class="flex justify-between items-center mb-2">
-                    <h4 class="text-sm font-semibold text-black">Payments</h4>
+                <div v-if="form.payments.length > 0" class="bg-gray-200 rounded-lg p-2">
+                  <div class="flex justify-between items-center mb-1.5">
+                    <h4 class="text-xs font-semibold text-black">Payments</h4>
                     <span class="text-xs text-black-400"
                       >{{ form.payments.length }} method(s)</span
                     >
                   </div>
-                  <div class="space-y-2">
+                  <div class="space-y-1.5">
                     <div
                       v-for="(payment, index) in form.payments"
                       :key="index"
-                      class="flex justify-between items-center text-sm bg-gray-600 rounded px-3 py-2"
+                      class="flex justify-between items-center text-xs bg-gray-600 rounded px-2.5 py-1.5"
                     >
                       <div>
                         <span class="font-medium text-white">{{
@@ -619,7 +619,7 @@
                     </div>
                   </div>
                   <div
-                    class="mt-2 pt-2 border-t border-gray-600 flex justify-between text-sm"
+                    class="mt-1.5 pt-1.5 border-t border-gray-600 flex justify-between text-xs"
                   >
                     <span class="text-black">Total Paid:</span>
                     <span class="text-black font-semibold"
@@ -629,10 +629,10 @@
                   </div>
                 </div>
 
-                <div class="pt-4 border-t border-gray-700">
+                <div class="pt-2.5 border-t border-gray-700">
                   <div
                     v-if="change > 0"
-                    class="flex justify-between text-lg font-semibold text-blue-400"
+                    class="flex justify-between text-base font-semibold text-blue-400"
                   >
                     <span>Change:</span>
                     <span
@@ -641,7 +641,7 @@
                   </div>
                   <div
                     v-else
-                    class="flex justify-between text-lg font-semibold"
+                    class="flex justify-between text-base font-semibold"
                     :class="{
                       'text-red-600': balance > 0,
                       'text-blue-600': balance <= 0,
@@ -656,31 +656,32 @@
                 </div>
               </div>
 
-              <!-- Payment Button -->
-              <button
-                @click="openPaymentModal"
-                :disabled="form.items.length === 0"
-                class="mt-6 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-200 disabled:cursor-not-allowed text-white font-bold py-4 px-4 rounded-lg transition text-lg shadow-lg"
-              >
-                💳 Add Payment
-              </button>
+              <!-- Payment + Submit Buttons (side by side) -->
+              <div class="mt-3 flex gap-2.5">
+                <button
+                  @click="openPaymentModal"
+                  :disabled="form.items.length === 0"
+                  class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-200 disabled:cursor-not-allowed text-white font-bold py-3 px-3 rounded-xl transition-all duration-150 text-sm shadow-md hover:shadow-lg active:scale-[0.98]"
+                >
+                  💳 Add Payment
+                </button>
 
-              <!-- Submit Button -->
-              <button
-                @click="submitSale"
-                :disabled="
-                  form.items.length === 0 || form.payments.length === 0 || form.processing
-                "
-                class="mt-3 w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-4 px-4 rounded-lg transition text-lg shadow-lg"
-              >
-                <span v-if="form.processing">⏳ Processing...</span>
-                <span v-else>✅ Complete Salesd (F9)</span>
-              </button>
+                <button
+                  @click="submitSale"
+                  :disabled="
+                    form.items.length === 0 || form.payments.length === 0 || form.processing
+                  "
+                  class="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3 px-3 rounded-xl transition-all duration-150 text-sm shadow-md hover:shadow-lg active:scale-[0.98]"
+                >
+                  <span v-if="form.processing">⏳ Processing...</span>
+                  <span v-else>✅ Complete Salesd (F9)</span>
+                </button>
+              </div>
 
               <!-- Quick Actions -->
-              <div class="mt-4 text-xs text-gray-400 text-center">
+              <div class="mt-2 text-[10px] text-gray-400 text-center">
                 <p>Keyboard Shortcuts:</p>
-                <p>F9: Complete Sale | F8: Clear Cart | ESC: Focus Barcode</p>
+                <p>F9: Complete Sale | F10: Add Payment | F8: Clear Cart | ESC: Focus Barcode</p>
               </div>
           </div>
         </div>
@@ -2511,6 +2512,11 @@ const handleKeyDown = (event) => {
                event.keyCode === 120 ||
                event.code === 'F9';
 
+  // Check if F10 is pressed using multiple methods
+  const isF10 = event.key === 'F10' ||
+                event.keyCode === 121 ||
+                event.code === 'F10';
+
   // Check if ESC is pressed
   const isESC = event.key === 'Escape' ||
                 event.keyCode === 27 ||
@@ -2548,6 +2554,24 @@ const handleKeyDown = (event) => {
     // Check if sale can be completed (has items and payments, not already processing)
     if ((!isInputField || isBarcodeField) && form.items.length > 0 && form.payments.length > 0 && !form.processing) {
       submitSale();
+    }
+
+    return false;
+  }
+
+  if (isF10) {
+    // Completely prevent default and stop propagation
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+
+    // Don't trigger if user is actively typing in form fields (except barcode field)
+    const activeElement = document.activeElement;
+    const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement?.tagName);
+    const isBarcodeField = activeElement === barcodeField.value;
+
+    if (!isInputField || isBarcodeField) {
+      openPaymentModal();
     }
 
     return false;
@@ -2609,7 +2633,7 @@ select.no-arrow::-ms-expand {
 .pos-main-grid {
   display: grid;
   grid-template-columns: 200px minmax(0, 1fr) 520px;
-  grid-template-rows: minmax(160px, 260px) minmax(0, 1fr);
+  grid-template-rows: minmax(340px, 420px) minmax(0, 1fr);
   gap: 1rem;
   align-items: stretch;
   min-height: 0;
