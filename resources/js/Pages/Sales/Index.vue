@@ -50,10 +50,6 @@
             >
               ← {{ $t('common.back') }}
             </button>
-            <h1 class="text-xl font-bold text-black flex-shrink-0">{{ $t('sales.title') }}</h1>
-            <span class="hidden xl:inline text-xs text-gray-400 whitespace-nowrap">
-              {{ $t('sales.invoice') }} (F9: Complete | F10: Payment | F8: Clear | ESC: Focus Barcode | Shift: Focus Search)
-            </span>
           </div>
 
           <div class="flex items-center gap-4 flex-wrap">
@@ -319,39 +315,36 @@
                   class="product-card"
                   :class="{ 'product-card-active': isProductInCart(product.id) }"
                 >
-                  <div
-                    v-if="isLowStock(product)"
-                    class="absolute top-1.5 left-1.5 bg-amber-500 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-full z-10"
-                  >
-                    Low
-                  </div>
-                  <div
-                    v-if="isProductInCart(product.id)"
-                    class="absolute top-1.5 right-1.5 bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full z-10 min-w-[18px] text-center"
-                  >
-                    {{ getProductCartQuantity(product.id) }}
-                  </div>
-                  <div class="aspect-square bg-gray-50 flex items-center justify-center overflow-hidden rounded-t-[10px]">
-                    <img
-                      v-if="product.image"
-                      :src="'/storage/' + product.image"
-                      :alt="product.name"
-                      class="w-full h-full object-cover"
-                      @error="$event.target.src = '/storage/products/default.png'"
-                    />
-                    <span v-else class="text-3xl text-gray-300">📦</span>
-                  </div>
-                  <div class="p-2">
-                    <h4 class="text-gray-900 font-semibold text-xs mb-1 truncate" :title="product.name">
-                      {{ product.name }}
-                    </h4>
-                    <div class="flex items-center justify-between">
-                      <span class="text-blue-700 font-bold text-sm">
-                        {{ page.props.currency || "Rs." }}{{ parseFloat(getCurrentPrice(product) || 0).toFixed(2) }}
+                  <div class="p-3">
+                    <div class="flex items-start justify-between gap-1.5 mb-1.5">
+                      <h4
+                        class="text-gray-900 font-semibold text-sm leading-snug line-clamp-2 flex-1"
+                        :title="product.name"
+                      >
+                        {{ product.name }}
+                      </h4>
+                      <span
+                        v-if="isProductInCart(product.id)"
+                        class="flex-shrink-0 bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
+                      >
+                        {{ getProductCartQuantity(product.id) }}
                       </span>
                     </div>
-                    <div class="mt-1 text-[11px] text-gray-500 flex items-center justify-between">
-                      <span>Stock:</span>
+
+                    <div class="flex items-center justify-between gap-1.5">
+                      <span class="text-blue-700 font-bold text-base">
+                        {{ page.props.currency || "Rs." }}{{ parseFloat(getCurrentPrice(product) || 0).toFixed(2) }}
+                      </span>
+                      <span
+                        v-if="isLowStock(product)"
+                        class="flex-shrink-0 bg-amber-100 text-amber-700 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                      >
+                        Low
+                      </span>
+                    </div>
+
+                    <div class="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
+                      <span>Stock</span>
                       <span
                         class="font-semibold"
                         :class="isLowStock(product) ? 'text-amber-600' : 'text-gray-700'"
