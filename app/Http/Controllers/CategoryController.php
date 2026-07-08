@@ -63,6 +63,8 @@ class CategoryController extends Controller
             'name.unique' => 'A category with this name already exists.',
         ]);
 
+        $validated['category_code'] = mb_strtoupper(mb_substr($validated['name'], 0, 3));
+
         try {
             $category = Category::create($validated);
         } catch (QueryException $e) {
@@ -105,6 +107,8 @@ class CategoryController extends Controller
         ], [
             'name.unique' => 'A category with this name already exists.',
         ]);
+
+        $validated['category_code'] = mb_strtoupper(mb_substr($validated['name'], 0, 3));
 
         try {
             $category->update($validated);
