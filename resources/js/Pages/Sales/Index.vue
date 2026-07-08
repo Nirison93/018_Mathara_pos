@@ -388,13 +388,22 @@
                 <h3 class="text-base font-semibold text-gray-800">
                   Cart Items ({{ form.items.length }})
                 </h3>
-                <button
-                  v-if="form.items.length > 0"
-                  @click="clearCart"
-                  class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded-[5px] transition font-medium"
-                >
-                  Clear Cart (F8)
-                </button>
+                <div class="flex items-center gap-2">
+                  <button
+                    @click="showHeldBillsModal = true"
+                    :disabled="heldBills.length === 0"
+                    class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs rounded-[5px] transition font-medium"
+                  >
+                    📋 Held Bills ({{ heldBills.length }})
+                  </button>
+                  <button
+                    v-if="form.items.length > 0"
+                    @click="clearCart"
+                    class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded-[5px] transition font-medium"
+                  >
+                    Clear Cart (F8)
+                  </button>
+                </div>
               </div>
               <div class="overflow-auto flex-1 min-h-0">
                 <table class="w-full">
@@ -658,6 +667,14 @@
 
               <!-- Payment + Submit Buttons (side by side) -->
               <div class="mt-3 flex gap-2.5">
+                <button
+                  @click="holdBill"
+                  :disabled="form.items.length === 0"
+                  class="flex-1 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-200 disabled:cursor-not-allowed text-white font-bold py-3 px-3 rounded-xl transition-all duration-150 text-sm shadow-md hover:shadow-lg active:scale-[0.98]"
+                >
+                  ⏸️ Hold Bill
+                </button>
+
                 <button
                   @click="openPaymentModal"
                   :disabled="form.items.length === 0"
@@ -1071,6 +1088,60 @@
       </div>
     </Modal>
 
+    <!-- Held Bills Modal -->
+    <Modal :show="showHeldBillsModal" @close="() => (showHeldBillsModal = false)" max-width="lg">
+      <div class="p-6 bg-white">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-bold text-gray-800">📋 Held Bills</h2>
+          <button
+            @click="showHeldBillsModal = false"
+            class="text-gray-400 hover:text-gray-600 text-xl leading-none"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div v-if="heldBills.length === 0" class="text-center py-10 text-gray-500">
+          No held bills.
+        </div>
+
+        <div v-else class="space-y-3 max-h-[60vh] overflow-y-auto">
+          <div
+            v-for="bill in heldBills"
+            :key="bill.id"
+            class="border border-gray-200 rounded-xl p-3.5 flex items-center justify-between gap-3"
+          >
+            <div>
+              <div class="font-semibold text-gray-800">
+                {{ bill.customer_name }}
+                <span class="text-xs font-normal text-gray-400">· {{ bill.customer_type }}</span>
+              </div>
+              <div class="text-xs text-gray-500 mt-0.5">
+                {{ bill.items.length }} item(s) · Held at {{ formatHeldTime(bill.held_at) }}
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="font-bold text-blue-700 text-sm">
+                {{ page.props.currency || "Rs." }} {{ (bill.total || 0).toFixed(2) }}
+              </span>
+              <button
+                @click="resumeHeldBill(bill)"
+                class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-[5px] transition"
+              >
+                Resume
+              </button>
+              <button
+                @click="deleteHeldBill(bill)"
+                class="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold rounded-[5px] transition"
+              >
+                Discard
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Modal>
+
     <!-- Success Modal -->
     <Modal :show="showSuccessModal" @close="closeModal" max-width="md">
       <div class="p-8 bg-white">
@@ -1368,6 +1439,7 @@ const showPaymentModal = ref(false);
 const showProductModal = ref(false);
 const showQuickAddCustomer = ref(false);
 const showClosingModal = ref(false);
+const showHeldBillsModal = ref(false);
 const paymentMethod = ref(0);
 const paymentAmount = ref("");
 const completedInvoice = ref("");
@@ -1790,6 +1862,82 @@ const clearCart = () => {
     form.quotation_id = null; // Reset quotation reference
     barcodeField.value?.focus();
   }
+};
+
+// Held bills: park the current cart so a new bill can be started, and
+// resume/discard parked bills later. Persisted to localStorage so they
+// survive a page refresh.
+const HELD_BILLS_STORAGE_KEY = "pos_held_bills";
+const heldBills = ref([]);
+
+const saveHeldBillsToStorage = () => {
+  localStorage.setItem(HELD_BILLS_STORAGE_KEY, JSON.stringify(heldBills.value));
+};
+
+const loadHeldBillsFromStorage = () => {
+  try {
+    const stored = localStorage.getItem(HELD_BILLS_STORAGE_KEY);
+    heldBills.value = stored ? JSON.parse(stored) : [];
+  } catch (e) {
+    heldBills.value = [];
+  }
+};
+
+const formatHeldTime = (isoString) => {
+  const date = new Date(isoString);
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+};
+
+const holdBill = () => {
+  if (form.items.length === 0) return;
+
+  heldBills.value.push({
+    id: Date.now(),
+    held_at: new Date().toISOString(),
+    customer_id: form.customer_id,
+    customer_name: getCustomerName(form.customer_id) || "Walk-in",
+    customer_type: form.customer_type,
+    discount: form.discount,
+    items: JSON.parse(JSON.stringify(form.items)),
+    total: form.items.reduce((sum, item) => sum + item.price * item.quantity, 0),
+  });
+  saveHeldBillsToStorage();
+
+  // Reset the workspace so a new bill can be started
+  form.items = [];
+  form.customer_id = "";
+  form.customer_type = "retail";
+  form.discount = 0;
+  form.payments = [];
+  form.paid_amount = 0;
+  form.quotation_id = null;
+
+  barcodeField.value?.focus();
+};
+
+const resumeHeldBill = (bill) => {
+  if (
+    form.items.length > 0 &&
+    !confirm("The current cart has items. Resuming this held bill will replace them. Continue?")
+  ) {
+    return;
+  }
+
+  form.items = JSON.parse(JSON.stringify(bill.items));
+  form.customer_id = bill.customer_id;
+  form.customer_type = bill.customer_type;
+  form.discount = bill.discount;
+
+  heldBills.value = heldBills.value.filter((b) => b.id !== bill.id);
+  saveHeldBillsToStorage();
+
+  showHeldBillsModal.value = false;
+};
+
+const deleteHeldBill = (bill) => {
+  if (!confirm("Discard this held bill? This cannot be undone.")) return;
+  heldBills.value = heldBills.value.filter((b) => b.id !== bill.id);
+  saveHeldBillsToStorage();
 };
 
 // Add payment
@@ -2746,6 +2894,7 @@ const handleKeyDown = (event) => {
 onMounted(() => {
   barcodeField.value?.focus();
   window.addEventListener("keydown", handleKeyDown, true);
+  loadHeldBillsFromStorage();
 
   // Populate the always-visible product grid using the existing filter logic
   filterProducts();
