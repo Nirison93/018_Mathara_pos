@@ -1638,8 +1638,8 @@ const addToCart = (product) => {
   const existingIndex = form.items.findIndex((item) => item.product_id === product.id);
 
   if (existingIndex !== -1) {
-    // Product already in cart - remove it (toggle)
-    form.items.splice(existingIndex, 1);
+    // Product already in cart - increase its quantity
+    form.items[existingIndex].quantity += productQuantities.value[product.id] || 1;
   } else {
     // Product not in cart - add it
     const price = getCurrentPrice(product);
