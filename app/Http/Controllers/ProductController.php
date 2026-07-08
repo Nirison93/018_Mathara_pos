@@ -35,6 +35,38 @@ class ProductController extends Controller
     }
 
     /**
+     * Generate a unique search code for a product based on its category's
+     * category_code, e.g. "DRY-0001", "DRY-0002", "MILK-0001".
+     */
+    private function generateProductSearchCode($categoryId)
+    {
+        if (empty($categoryId)) {
+            return null;
+        }
+
+        $category = Category::find($categoryId);
+
+        if (!$category || empty($category->category_code)) {
+            return null;
+        }
+
+        $prefix = strtoupper($category->category_code);
+
+        $lastNumber = 0;
+        Product::where('category_id', $categoryId)
+            ->where('product_search_code', 'like', $prefix . '-%')
+            ->pluck('product_search_code')
+            ->each(function ($code) use (&$lastNumber) {
+                $number = (int) substr($code, strrpos($code, '-') + 1);
+                if ($number > $lastNumber) {
+                    $lastNumber = $number;
+                }
+            });
+
+        return $prefix . '-' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
@@ -213,6 +245,9 @@ class ProductController extends Controller
         // Return product convert to boolean
         $validated['return_product'] = $request->boolean('return_product');
 
+        // Auto-generate search code from category's category_code
+        $validated['product_search_code'] = $this->generateProductSearchCode($validated['category_id'] ?? null);
+
         Product::create($validated);
 
         return redirect()->route('products.index')
@@ -354,6 +389,9 @@ class ProductController extends Controller
 
         // Boolean cast
         $validated['return_product'] = $request->boolean('return_product');
+
+        // Auto-generate search code from category's category_code
+        $validated['product_search_code'] = $this->generateProductSearchCode($validated['category_id'] ?? null);
 
         Product::create($validated);
 

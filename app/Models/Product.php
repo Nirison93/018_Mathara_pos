@@ -61,6 +61,7 @@ class Product extends Model
         'transfer_to_sales_rate',
         'status',
         'image',
+        'product_search_code',
     ];
 
     // Virtual attributes that are always computed and returned with the model

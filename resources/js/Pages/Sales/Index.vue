@@ -111,20 +111,56 @@
             >
             <div class="flex gap-2">
               <div class="relative flex-1">
-                <select
-                  v-model="form.customer_id"
-                  class="no-arrow w-full px-3 py-1.5 bg-white text-gray-800 border border-gray-300 rounded-[5px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm pr-10 font-medium"
-                  title="Select Customer"
-                >
-                  <option value="">-- Select Customer --</option>
-                  <option
-                    v-for="customer in activeCustomers"
-                    :key="customer.id"
-                    :value="customer.id"
-                  >
-                    {{ customer.name }}
-                  </option>
-                </select>
+                <Combobox v-model="form.customer_id">
+                  <div class="relative">
+                    <ComboboxInput
+                      class="w-full px-3 py-1.5 bg-white text-gray-800 border border-gray-300 rounded-[5px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm pr-10 font-medium"
+                      :display-value="getCustomerName"
+                      placeholder="-- Select Customer --"
+                      title="Select Customer"
+                      @change="customerSearchQuery = $event.target.value"
+                    />
+                    <ComboboxOptions
+                      class="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-[5px] bg-white border border-gray-200 shadow-lg text-sm"
+                    >
+                      <div
+                        v-if="filteredCustomers.length === 0"
+                        class="px-3 py-2 text-gray-500"
+                      >
+                        No customer found
+                      </div>
+                      <ComboboxOption
+                        v-slot="{ active }"
+                        :value="''"
+                      >
+                        <div
+                          :class="[
+                            active ? 'bg-blue-50 text-blue-700' : 'text-gray-700',
+                            'px-3 py-2 cursor-pointer',
+                          ]"
+                        >
+                          -- Select Customer --
+                        </div>
+                      </ComboboxOption>
+                      <ComboboxOption
+                        v-for="customer in filteredCustomers"
+                        :key="customer.id"
+                        v-slot="{ active, selected }"
+                        :value="customer.id"
+                      >
+                        <div
+                          :class="[
+                            active ? 'bg-blue-50 text-blue-700' : 'text-gray-700',
+                            selected ? 'font-semibold' : '',
+                            'px-3 py-2 cursor-pointer',
+                          ]"
+                        >
+                          {{ customer.name }}
+                        </div>
+                      </ComboboxOption>
+                    </ComboboxOptions>
+                  </div>
+                </Combobox>
                 <button
                   type="button"
                   @click="openCustomerModal"
@@ -269,7 +305,7 @@
                 type="text"
                 v-model="productFilters.search"
                 @input="filterProducts"
-                placeholder="🔍 Search products by name or barcode..."
+                placeholder="🔍 Search products by name or search code..."
                 class="flex-1 px-3 py-2 bg-gray-50 text-gray-800 border border-gray-200 rounded-[5px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all text-sm"
               />
               <button
@@ -285,11 +321,15 @@
             <div ref="productGridScrollEl" class="product-grid-scroll flex-1 overflow-y-auto" @scroll="onProductGridScroll">
               <div class="product-grid">
                 <div
-                  v-for="product in infiniteScrollProducts"
+                  v-for="(product, index) in infiniteScrollProducts"
                   :key="product.id"
-                  @click="addToCart(product)"
+                  :ref="index === selectedProductIndex ? 'selectedProductCardEl' : undefined"
+                  @click="() => { selectedProductIndex = index; addToCart(product); }"
                   class="product-card"
-                  :class="{ 'product-card-active': isProductInCart(product.id) }"
+                  :class="{
+                    'product-card-active': isProductInCart(product.id),
+                    'product-card-selected': index === selectedProductIndex,
+                  }"
                 >
                   <div class="p-3">
                     <div class="flex items-start justify-between gap-1.5 mb-1.5">
@@ -316,16 +356,6 @@
                         class="flex-shrink-0 bg-amber-100 text-amber-700 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
                       >
                         Low
-                      </span>
-                    </div>
-
-                    <div class="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
-                      <span>Stock</span>
-                      <span
-                        class="font-semibold"
-                        :class="isLowStock(product) ? 'text-amber-600' : 'text-gray-700'"
-                      >
-                        {{ product.shop_quantity_in_sales_unit }}
                       </span>
                     </div>
                   </div>
@@ -358,13 +388,22 @@
                 <h3 class="text-base font-semibold text-gray-800">
                   Cart Items ({{ form.items.length }})
                 </h3>
-                <button
-                  v-if="form.items.length > 0"
-                  @click="clearCart"
-                  class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded-[5px] transition font-medium"
-                >
-                  Clear Cart (F8)
-                </button>
+                <div class="flex items-center gap-2">
+                  <button
+                    @click="showHeldBillsModal = true"
+                    :disabled="heldBills.length === 0"
+                    class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs rounded-[5px] transition font-medium"
+                  >
+                    📋 Held Bills ({{ heldBills.length }})
+                  </button>
+                  <button
+                    v-if="form.items.length > 0"
+                    @click="clearCart"
+                    class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded-[5px] transition font-medium"
+                  >
+                    Clear Cart (F8)
+                  </button>
+                </div>
               </div>
               <div class="overflow-auto flex-1 min-h-0">
                 <table class="w-full">
@@ -629,6 +668,14 @@
               <!-- Payment + Submit Buttons (side by side) -->
               <div class="mt-3 flex gap-2.5">
                 <button
+                  @click="holdBill"
+                  :disabled="form.items.length === 0"
+                  class="flex-1 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-200 disabled:cursor-not-allowed text-white font-bold py-3 px-3 rounded-xl transition-all duration-150 text-sm shadow-md hover:shadow-lg active:scale-[0.98]"
+                >
+                  ⏸️ Hold Bill
+                </button>
+
+                <button
                   @click="openPaymentModal"
                   :disabled="form.items.length === 0"
                   class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-200 disabled:cursor-not-allowed text-white font-bold py-3 px-3 rounded-xl transition-all duration-150 text-sm shadow-md hover:shadow-lg active:scale-[0.98]"
@@ -684,7 +731,7 @@
                 type="text"
                 v-model="productFilters.search"
                 @input="filterProducts"
-                placeholder="Search products..."
+                placeholder="Search products by name or search code..."
                 class="w-full px-3 py-2 bg-gray-50 text-gray-800 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-400 focus:bg-white transition-all text-sm"
               />
             </div>
@@ -1041,6 +1088,60 @@
       </div>
     </Modal>
 
+    <!-- Held Bills Modal -->
+    <Modal :show="showHeldBillsModal" @close="() => (showHeldBillsModal = false)" max-width="lg">
+      <div class="p-6 bg-white">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-bold text-gray-800">📋 Held Bills</h2>
+          <button
+            @click="showHeldBillsModal = false"
+            class="text-gray-400 hover:text-gray-600 text-xl leading-none"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div v-if="heldBills.length === 0" class="text-center py-10 text-gray-500">
+          No held bills.
+        </div>
+
+        <div v-else class="space-y-3 max-h-[60vh] overflow-y-auto">
+          <div
+            v-for="bill in heldBills"
+            :key="bill.id"
+            class="border border-gray-200 rounded-xl p-3.5 flex items-center justify-between gap-3"
+          >
+            <div>
+              <div class="font-semibold text-gray-800">
+                {{ bill.customer_name }}
+                <span class="text-xs font-normal text-gray-400">· {{ bill.customer_type }}</span>
+              </div>
+              <div class="text-xs text-gray-500 mt-0.5">
+                {{ bill.items.length }} item(s) · Held at {{ formatHeldTime(bill.held_at) }}
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="font-bold text-blue-700 text-sm">
+                {{ page.props.currency || "Rs." }} {{ (bill.total || 0).toFixed(2) }}
+              </span>
+              <button
+                @click="resumeHeldBill(bill)"
+                class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-[5px] transition"
+              >
+                Resume
+              </button>
+              <button
+                @click="deleteHeldBill(bill)"
+                class="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold rounded-[5px] transition"
+              >
+                Discard
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Modal>
+
     <!-- Success Modal -->
     <Modal :show="showSuccessModal" @close="closeModal" max-width="md">
       <div class="p-8 bg-white">
@@ -1261,6 +1362,12 @@ import { useI18n } from "vue-i18n";
 const page = usePage();
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
 import { logActivity } from "@/composables/useActivityLog";
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxOptions,
+  ComboboxOption,
+} from "@headlessui/vue";
 import Modal from "@/Components/Modal.vue";
 import CustomerCreateModal from "@/Pages/Customers/Components/CustomerCreateModal.vue";
 
@@ -1295,6 +1402,20 @@ const activeCustomers = computed(() => {
   );
 });
 
+// Searchable customer dropdown
+const customerSearchQuery = ref('');
+const filteredCustomers = computed(() => {
+  if (customerSearchQuery.value.trim() === '') {
+    return activeCustomers.value;
+  }
+  const query = customerSearchQuery.value.toLowerCase().trim();
+  return activeCustomers.value.filter((c) => c.name.toLowerCase().includes(query));
+});
+const getCustomerName = (customerId) => {
+  if (!customerId) return '';
+  return activeCustomers.value.find((c) => c.id === customerId)?.name || '';
+};
+
 const form = useForm({
   invoice_no: props.invoice_no,
   customer_id: '', // Ensure default is empty
@@ -1318,6 +1439,7 @@ const showPaymentModal = ref(false);
 const showProductModal = ref(false);
 const showQuickAddCustomer = ref(false);
 const showClosingModal = ref(false);
+const showHeldBillsModal = ref(false);
 const paymentMethod = ref(0);
 const paymentAmount = ref("");
 const completedInvoice = ref("");
@@ -1465,6 +1587,13 @@ const productGridScrollEl = ref(null);
 const infiniteScrollProducts = computed(() => {
   return filteredProducts.value.slice(0, embeddedVisibleCount.value);
 });
+
+// Keyboard navigation: currently highlighted product card (Left/Right arrows, Enter to add)
+const selectedProductIndex = ref(-1);
+const selectedProductCardEl = ref(null);
+
+// Keyboard navigation: category list including the "All Products" entry (Up/Down arrows)
+const categoryNavList = computed(() => [{ id: '' }, ...props.categories]);
 const hasMoreProducts = computed(() => {
   return embeddedVisibleCount.value < filteredProducts.value.length;
 });
@@ -1495,7 +1624,17 @@ const fillProductGridIfNeeded = async () => {
 };
 watch(filteredProducts, () => {
   embeddedVisibleCount.value = itemsPerPage.value;
+  selectedProductIndex.value = -1;
   fillProductGridIfNeeded();
+});
+
+// Keep the keyboard-selected product card visible when navigating with Left/Right
+watch(selectedProductIndex, async () => {
+  await nextTick();
+  const el = Array.isArray(selectedProductCardEl.value)
+    ? selectedProductCardEl.value[0]
+    : selectedProductCardEl.value;
+  el?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
 });
 
 // Calculations
@@ -1627,8 +1766,8 @@ const addToCart = (product) => {
   const existingIndex = form.items.findIndex((item) => item.product_id === product.id);
 
   if (existingIndex !== -1) {
-    // Product already in cart - remove it (toggle)
-    form.items.splice(existingIndex, 1);
+    // Product already in cart - increase its quantity
+    form.items[existingIndex].quantity += productQuantities.value[product.id] || 1;
   } else {
     // Product not in cart - add it
     const price = getCurrentPrice(product);
@@ -1723,6 +1862,82 @@ const clearCart = () => {
     form.quotation_id = null; // Reset quotation reference
     barcodeField.value?.focus();
   }
+};
+
+// Held bills: park the current cart so a new bill can be started, and
+// resume/discard parked bills later. Persisted to localStorage so they
+// survive a page refresh.
+const HELD_BILLS_STORAGE_KEY = "pos_held_bills";
+const heldBills = ref([]);
+
+const saveHeldBillsToStorage = () => {
+  localStorage.setItem(HELD_BILLS_STORAGE_KEY, JSON.stringify(heldBills.value));
+};
+
+const loadHeldBillsFromStorage = () => {
+  try {
+    const stored = localStorage.getItem(HELD_BILLS_STORAGE_KEY);
+    heldBills.value = stored ? JSON.parse(stored) : [];
+  } catch (e) {
+    heldBills.value = [];
+  }
+};
+
+const formatHeldTime = (isoString) => {
+  const date = new Date(isoString);
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+};
+
+const holdBill = () => {
+  if (form.items.length === 0) return;
+
+  heldBills.value.push({
+    id: Date.now(),
+    held_at: new Date().toISOString(),
+    customer_id: form.customer_id,
+    customer_name: getCustomerName(form.customer_id) || "Walk-in",
+    customer_type: form.customer_type,
+    discount: form.discount,
+    items: JSON.parse(JSON.stringify(form.items)),
+    total: form.items.reduce((sum, item) => sum + item.price * item.quantity, 0),
+  });
+  saveHeldBillsToStorage();
+
+  // Reset the workspace so a new bill can be started
+  form.items = [];
+  form.customer_id = "";
+  form.customer_type = "retail";
+  form.discount = 0;
+  form.payments = [];
+  form.paid_amount = 0;
+  form.quotation_id = null;
+
+  barcodeField.value?.focus();
+};
+
+const resumeHeldBill = (bill) => {
+  if (
+    form.items.length > 0 &&
+    !confirm("The current cart has items. Resuming this held bill will replace them. Continue?")
+  ) {
+    return;
+  }
+
+  form.items = JSON.parse(JSON.stringify(bill.items));
+  form.customer_id = bill.customer_id;
+  form.customer_type = bill.customer_type;
+  form.discount = bill.discount;
+
+  heldBills.value = heldBills.value.filter((b) => b.id !== bill.id);
+  saveHeldBillsToStorage();
+
+  showHeldBillsModal.value = false;
+};
+
+const deleteHeldBill = (bill) => {
+  if (!confirm("Discard this held bill? This cannot be undone.")) return;
+  heldBills.value = heldBills.value.filter((b) => b.id !== bill.id);
+  saveHeldBillsToStorage();
 };
 
 // Add payment
@@ -1863,7 +2078,7 @@ const filterProducts = () => {
     const searchTerm = productFilters.value.search.toLowerCase().trim();
     filtered = filtered.filter((p) =>
       p.name.toLowerCase().includes(searchTerm) ||
-      (p.barcode && p.barcode.toLowerCase().includes(searchTerm))
+      (p.product_search_code && p.product_search_code.toLowerCase().includes(searchTerm))
     );
   }
 
@@ -2486,17 +2701,34 @@ const handleKeyDown = (event) => {
                 event.keyCode === 27 ||
                 event.code === 'Escape';
 
-  // Check if Shift is pressed (by itself, not as part of a Shift+key combo)
-  const isShift = (event.key === 'Shift' || event.keyCode === 16 || event.code === 'ShiftLeft' || event.code === 'ShiftRight')
-                  && !event.ctrlKey && !event.altKey && !event.metaKey;
+  // Check if Delete is pressed
+  const isDelete = event.key === 'Delete' ||
+                   event.keyCode === 46 ||
+                   event.code === 'Delete';
 
-  if (isShift) {
+  // Check if F1 is pressed
+  const isF1 = event.key === 'F1' ||
+               event.keyCode === 112 ||
+               event.code === 'F1';
+
+  // Check arrow keys: Up/Down navigate categories, Left/Right navigate products
+  const isArrowUp = event.key === 'ArrowUp' || event.keyCode === 38;
+  const isArrowDown = event.key === 'ArrowDown' || event.keyCode === 40;
+  const isArrowLeft = event.key === 'ArrowLeft' || event.keyCode === 37;
+  const isArrowRight = event.key === 'ArrowRight' || event.keyCode === 39;
+
+  // Check if Enter is pressed (used to add the keyboard-selected product to the cart)
+  const isEnter = event.key === 'Enter' || event.keyCode === 13;
+
+  if (isF1) {
+    // Prevent the browser's default F1 (help) behavior
+    event.preventDefault();
+
     // Don't steal focus while the user is actively typing/selecting in any form field
     const activeElement = document.activeElement;
     const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement?.tagName);
 
     if (!isInputField && productSearchField.value) {
-      event.preventDefault();
       productSearchField.value.focus();
       productSearchField.value.select();
     }
@@ -2572,6 +2804,89 @@ const handleKeyDown = (event) => {
 
     return false;
   }
+
+  if (isDelete) {
+    // Don't trigger if user is actively typing in form fields (except barcode field)
+    const activeElement = document.activeElement;
+    const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement?.tagName);
+    const isBarcodeField = activeElement === barcodeField.value;
+
+    if ((!isInputField || isBarcodeField) && form.items.length > 0) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+
+      // Remove the last item in the cart, one press at a time
+      removeItem(form.items.length - 1);
+    }
+
+    return false;
+  }
+
+  if (isArrowUp || isArrowDown) {
+    // Don't trigger if user is actively typing in form fields (except barcode field)
+    const activeElement = document.activeElement;
+    const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement?.tagName);
+    const isBarcodeField = activeElement === barcodeField.value;
+
+    if (!isInputField || isBarcodeField) {
+      event.preventDefault();
+
+      // Select the previous (Up) or next (Down) category, including "All Products"
+      const navList = categoryNavList.value;
+      const currentIndex = navList.findIndex(
+        (c) => String(c.id) === String(productFilters.value.category_id)
+      );
+      const startIndex = currentIndex === -1 ? 0 : currentIndex;
+      const newIndex = isArrowUp
+        ? Math.max(0, startIndex - 1)
+        : Math.min(navList.length - 1, startIndex + 1);
+
+      productFilters.value.category_id = navList[newIndex].id;
+      filterProducts();
+    }
+
+    return false;
+  }
+
+  if (isArrowLeft || isArrowRight) {
+    // Don't trigger if user is actively typing in form fields (except barcode field)
+    const activeElement = document.activeElement;
+    const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement?.tagName);
+    const isBarcodeField = activeElement === barcodeField.value;
+
+    if ((!isInputField || isBarcodeField) && infiniteScrollProducts.value.length > 0) {
+      event.preventDefault();
+
+      // Move the highlighted product card left/right through the visible grid
+      if (selectedProductIndex.value === -1) {
+        selectedProductIndex.value = 0;
+      } else if (isArrowLeft) {
+        selectedProductIndex.value = Math.max(0, selectedProductIndex.value - 1);
+      } else {
+        selectedProductIndex.value = Math.min(
+          infiniteScrollProducts.value.length - 1,
+          selectedProductIndex.value + 1
+        );
+      }
+    }
+
+    return false;
+  }
+
+  if (isEnter) {
+    // Don't trigger while typing anywhere (barcode/payment fields already handle their own Enter)
+    const activeElement = document.activeElement;
+    const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement?.tagName);
+
+    if (!isInputField && selectedProductIndex.value !== -1) {
+      const product = infiniteScrollProducts.value[selectedProductIndex.value];
+      if (product) {
+        event.preventDefault();
+        addToCart(product);
+      }
+    }
+  }
 };
 
 
@@ -2579,6 +2894,7 @@ const handleKeyDown = (event) => {
 onMounted(() => {
   barcodeField.value?.focus();
   window.addEventListener("keydown", handleKeyDown, true);
+  loadHeldBillsFromStorage();
 
   // Populate the always-visible product grid using the existing filter logic
   filterProducts();
@@ -2710,6 +3026,10 @@ select.no-arrow::-ms-expand {
 .product-card-active {
   border-color: #2563eb;
   box-shadow: 0 0 0 2px #2563eb;
+}
+.product-card-selected {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 2px #f59e0b;
 }
 
 @media (max-width: 1399px) {
