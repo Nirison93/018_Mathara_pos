@@ -111,20 +111,56 @@
             >
             <div class="flex gap-2">
               <div class="relative flex-1">
-                <select
-                  v-model="form.customer_id"
-                  class="no-arrow w-full px-3 py-1.5 bg-white text-gray-800 border border-gray-300 rounded-[5px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm pr-10 font-medium"
-                  title="Select Customer"
-                >
-                  <option value="">-- Select Customer --</option>
-                  <option
-                    v-for="customer in activeCustomers"
-                    :key="customer.id"
-                    :value="customer.id"
-                  >
-                    {{ customer.name }}
-                  </option>
-                </select>
+                <Combobox v-model="form.customer_id">
+                  <div class="relative">
+                    <ComboboxInput
+                      class="w-full px-3 py-1.5 bg-white text-gray-800 border border-gray-300 rounded-[5px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm pr-10 font-medium"
+                      :display-value="getCustomerName"
+                      placeholder="-- Select Customer --"
+                      title="Select Customer"
+                      @change="customerSearchQuery = $event.target.value"
+                    />
+                    <ComboboxOptions
+                      class="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-[5px] bg-white border border-gray-200 shadow-lg text-sm"
+                    >
+                      <div
+                        v-if="filteredCustomers.length === 0"
+                        class="px-3 py-2 text-gray-500"
+                      >
+                        No customer found
+                      </div>
+                      <ComboboxOption
+                        v-slot="{ active }"
+                        :value="''"
+                      >
+                        <div
+                          :class="[
+                            active ? 'bg-blue-50 text-blue-700' : 'text-gray-700',
+                            'px-3 py-2 cursor-pointer',
+                          ]"
+                        >
+                          -- Select Customer --
+                        </div>
+                      </ComboboxOption>
+                      <ComboboxOption
+                        v-for="customer in filteredCustomers"
+                        :key="customer.id"
+                        v-slot="{ active, selected }"
+                        :value="customer.id"
+                      >
+                        <div
+                          :class="[
+                            active ? 'bg-blue-50 text-blue-700' : 'text-gray-700',
+                            selected ? 'font-semibold' : '',
+                            'px-3 py-2 cursor-pointer',
+                          ]"
+                        >
+                          {{ customer.name }}
+                        </div>
+                      </ComboboxOption>
+                    </ComboboxOptions>
+                  </div>
+                </Combobox>
                 <button
                   type="button"
                   @click="openCustomerModal"
@@ -1255,6 +1291,12 @@ import { useI18n } from "vue-i18n";
 const page = usePage();
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
 import { logActivity } from "@/composables/useActivityLog";
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxOptions,
+  ComboboxOption,
+} from "@headlessui/vue";
 import Modal from "@/Components/Modal.vue";
 import CustomerCreateModal from "@/Pages/Customers/Components/CustomerCreateModal.vue";
 
@@ -1288,6 +1330,20 @@ const activeCustomers = computed(() => {
     (c) => c.status === '1' || c.status === 1
   );
 });
+
+// Searchable customer dropdown
+const customerSearchQuery = ref('');
+const filteredCustomers = computed(() => {
+  if (customerSearchQuery.value.trim() === '') {
+    return activeCustomers.value;
+  }
+  const query = customerSearchQuery.value.toLowerCase().trim();
+  return activeCustomers.value.filter((c) => c.name.toLowerCase().includes(query));
+});
+const getCustomerName = (customerId) => {
+  if (!customerId) return '';
+  return activeCustomers.value.find((c) => c.id === customerId)?.name || '';
+};
 
 const form = useForm({
   invoice_no: props.invoice_no,
