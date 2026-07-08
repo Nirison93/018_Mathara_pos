@@ -36,12 +36,24 @@ class SaleController extends Controller
 
         $nextInvoiceNo = $lastSale ? 'INV-' . str_pad($lastSale->id + 1, 6, '0', STR_PAD_LEFT) : 'INV-000001';
 
+        // Total quantity sold per product (all-time, excluding returns), used to
+        // show the best-selling products first in the POS product list.
+        $productSoldQuantities = DB::table('sales_products')
+            ->where('is_return', false)
+            ->selectRaw('product_id, SUM(quantity) as total_qty')
+            ->groupBy('product_id')
+            ->pluck('total_qty', 'product_id');
+
         $products = Product::select('id', 'name', 'barcode', 'product_search_code', 'retail_price', 'wholesale_price', 'market_price', 'shop_quantity', 'shop_low_stock_margin', 'image', 'brand_id', 'category_id', 'type_id', 'discount_id', 'sales_unit_id')
 
             ->with(['brand:id,name', 'category:id,name', 'type:id,name', 'discount:id,name,value,type','salesUnit:id,name'])
-            ->orderByRaw('CASE WHEN shop_quantity <= shop_low_stock_margin THEN 1 ELSE 0 END')
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->each(function ($product) use ($productSoldQuantities) {
+                $product->total_sold = (int) ($productSoldQuantities[$product->id] ?? 0);
+            })
+            ->sortByDesc('total_sold')
+            ->values();
 
     $customers = Customer::select('id', 'name', 'status')
         ->orderBy('id', 'desc')

@@ -318,16 +318,6 @@
                         Low
                       </span>
                     </div>
-
-                    <div class="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
-                      <span>Stock</span>
-                      <span
-                        class="font-semibold"
-                        :class="isLowStock(product) ? 'text-amber-600' : 'text-gray-700'"
-                      >
-                        {{ product.shop_quantity_in_sales_unit }}
-                      </span>
-                    </div>
                   </div>
                 </div>
               </div>
