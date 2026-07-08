@@ -50,6 +50,7 @@
             <tr class="border-b-2 border-blue-600">
               <th class="px-4 py-3 text-blue-600 font-semibold text-sm">{{ $t('fields.number') }}</th>
               <th class="px-4 py-3 text-blue-600 font-semibold text-sm">{{ $t('fields.name') }}</th>
+              <th class="px-4 py-3 text-blue-600 font-semibold text-sm">{{ $t('fields.code') }}</th>
               <th class="px-4 py-3 text-blue-600 font-semibold text-sm">{{ $t('fields.name') }}</th>
               <th class="px-4 py-3 text-blue-600 font-semibold text-sm text-center">
                 {{ $t('fields.status') }}
@@ -77,6 +78,10 @@
               <!-- Category Name -->
               <td class="px-4 py-4">
                 <div class="font-semibold text-gray-900">{{ category.name }}</div>
+              </td>
+              <!-- Category Code -->
+              <td class="px-4 py-4">
+                <div class="text-sm text-gray-700">{{ category.category_code || '-' }}</div>
               </td>
               <!-- Parent Category -->
               <td class="px-4 py-4">
@@ -123,7 +128,7 @@
             </tr>
             <!-- Empty State Message -->
             <tr v-if="!categories.data || categories.data.length === 0">
-              <td colspan="5" class="px-6 py-8 text-center text-gray-500 font-medium">
+              <td colspan="6" class="px-6 py-8 text-center text-gray-500 font-medium">
                 {{ $t('categories.no_categories') }}
               </td>
             </tr>
