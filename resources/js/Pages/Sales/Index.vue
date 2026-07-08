@@ -2476,17 +2476,25 @@ const handleKeyDown = (event) => {
                 event.keyCode === 27 ||
                 event.code === 'Escape';
 
-  // Check if Shift is pressed (by itself, not as part of a Shift+key combo)
-  const isShift = (event.key === 'Shift' || event.keyCode === 16 || event.code === 'ShiftLeft' || event.code === 'ShiftRight')
-                  && !event.ctrlKey && !event.altKey && !event.metaKey;
+  // Check if Delete is pressed
+  const isDelete = event.key === 'Delete' ||
+                   event.keyCode === 46 ||
+                   event.code === 'Delete';
 
-  if (isShift) {
+  // Check if F1 is pressed
+  const isF1 = event.key === 'F1' ||
+               event.keyCode === 112 ||
+               event.code === 'F1';
+
+  if (isF1) {
+    // Prevent the browser's default F1 (help) behavior
+    event.preventDefault();
+
     // Don't steal focus while the user is actively typing/selecting in any form field
     const activeElement = document.activeElement;
     const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement?.tagName);
 
     if (!isInputField && productSearchField.value) {
-      event.preventDefault();
       productSearchField.value.focus();
       productSearchField.value.select();
     }
@@ -2558,6 +2566,24 @@ const handleKeyDown = (event) => {
     if (barcodeField.value) {
       barcodeField.value.focus();
       barcodeField.value.select();
+    }
+
+    return false;
+  }
+
+  if (isDelete) {
+    // Don't trigger if user is actively typing in form fields (except barcode field)
+    const activeElement = document.activeElement;
+    const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement?.tagName);
+    const isBarcodeField = activeElement === barcodeField.value;
+
+    if ((!isInputField || isBarcodeField) && form.items.length > 0) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+
+      // Remove the last item in the cart, one press at a time
+      removeItem(form.items.length - 1);
     }
 
     return false;
