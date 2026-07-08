@@ -269,7 +269,7 @@
                 type="text"
                 v-model="productFilters.search"
                 @input="filterProducts"
-                placeholder="🔍 Search products by name or barcode..."
+                placeholder="🔍 Search products by name or search code..."
                 class="flex-1 px-3 py-2 bg-gray-50 text-gray-800 border border-gray-200 rounded-[5px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all text-sm"
               />
               <button
@@ -684,7 +684,7 @@
                 type="text"
                 v-model="productFilters.search"
                 @input="filterProducts"
-                placeholder="Search products..."
+                placeholder="Search products by name or search code..."
                 class="w-full px-3 py-2 bg-gray-50 text-gray-800 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-400 focus:bg-white transition-all text-sm"
               />
             </div>
@@ -1863,7 +1863,7 @@ const filterProducts = () => {
     const searchTerm = productFilters.value.search.toLowerCase().trim();
     filtered = filtered.filter((p) =>
       p.name.toLowerCase().includes(searchTerm) ||
-      (p.barcode && p.barcode.toLowerCase().includes(searchTerm))
+      (p.product_search_code && p.product_search_code.toLowerCase().includes(searchTerm))
     );
   }
 
