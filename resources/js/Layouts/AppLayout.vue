@@ -363,6 +363,18 @@ onMounted(() => {
             <span class="font-mono text-xs font-bold px-2 py-1 rounded bg-gray-800 text-white">Delete</span>
             <span class="text-sm text-gray-700 dark:text-gray-200">Remove Product Item</span>
           </div>
+          <div class="flex items-center justify-between rounded-lg bg-gray-50 dark:bg-gray-700 px-3 py-2">
+            <span class="font-mono text-xs font-bold px-2 py-1 rounded bg-gray-800 text-white">↑ / ↓</span>
+            <span class="text-sm text-gray-700 dark:text-gray-200">Navigate Categories</span>
+          </div>
+          <div class="flex items-center justify-between rounded-lg bg-gray-50 dark:bg-gray-700 px-3 py-2">
+            <span class="font-mono text-xs font-bold px-2 py-1 rounded bg-gray-800 text-white">← / →</span>
+            <span class="text-sm text-gray-700 dark:text-gray-200">Navigate Products</span>
+          </div>
+          <div class="flex items-center justify-between rounded-lg bg-gray-50 dark:bg-gray-700 px-3 py-2">
+            <span class="font-mono text-xs font-bold px-2 py-1 rounded bg-gray-800 text-white">Enter</span>
+            <span class="text-sm text-gray-700 dark:text-gray-200">Add Selected Product</span>
+          </div>
         </div>
 
         <button

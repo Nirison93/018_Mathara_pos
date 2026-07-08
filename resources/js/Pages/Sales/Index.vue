@@ -285,11 +285,15 @@
             <div ref="productGridScrollEl" class="product-grid-scroll flex-1 overflow-y-auto" @scroll="onProductGridScroll">
               <div class="product-grid">
                 <div
-                  v-for="product in infiniteScrollProducts"
+                  v-for="(product, index) in infiniteScrollProducts"
                   :key="product.id"
-                  @click="addToCart(product)"
+                  :ref="index === selectedProductIndex ? 'selectedProductCardEl' : undefined"
+                  @click="() => { selectedProductIndex = index; addToCart(product); }"
                   class="product-card"
-                  :class="{ 'product-card-active': isProductInCart(product.id) }"
+                  :class="{
+                    'product-card-active': isProductInCart(product.id),
+                    'product-card-selected': index === selectedProductIndex,
+                  }"
                 >
                   <div class="p-3">
                     <div class="flex items-start justify-between gap-1.5 mb-1.5">
@@ -1455,6 +1459,13 @@ const productGridScrollEl = ref(null);
 const infiniteScrollProducts = computed(() => {
   return filteredProducts.value.slice(0, embeddedVisibleCount.value);
 });
+
+// Keyboard navigation: currently highlighted product card (Left/Right arrows, Enter to add)
+const selectedProductIndex = ref(-1);
+const selectedProductCardEl = ref(null);
+
+// Keyboard navigation: category list including the "All Products" entry (Up/Down arrows)
+const categoryNavList = computed(() => [{ id: '' }, ...props.categories]);
 const hasMoreProducts = computed(() => {
   return embeddedVisibleCount.value < filteredProducts.value.length;
 });
@@ -1485,7 +1496,17 @@ const fillProductGridIfNeeded = async () => {
 };
 watch(filteredProducts, () => {
   embeddedVisibleCount.value = itemsPerPage.value;
+  selectedProductIndex.value = -1;
   fillProductGridIfNeeded();
+});
+
+// Keep the keyboard-selected product card visible when navigating with Left/Right
+watch(selectedProductIndex, async () => {
+  await nextTick();
+  const el = Array.isArray(selectedProductCardEl.value)
+    ? selectedProductCardEl.value[0]
+    : selectedProductCardEl.value;
+  el?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
 });
 
 // Calculations
@@ -2486,6 +2507,15 @@ const handleKeyDown = (event) => {
                event.keyCode === 112 ||
                event.code === 'F1';
 
+  // Check arrow keys: Up/Down navigate categories, Left/Right navigate products
+  const isArrowUp = event.key === 'ArrowUp' || event.keyCode === 38;
+  const isArrowDown = event.key === 'ArrowDown' || event.keyCode === 40;
+  const isArrowLeft = event.key === 'ArrowLeft' || event.keyCode === 37;
+  const isArrowRight = event.key === 'ArrowRight' || event.keyCode === 39;
+
+  // Check if Enter is pressed (used to add the keyboard-selected product to the cart)
+  const isEnter = event.key === 'Enter' || event.keyCode === 13;
+
   if (isF1) {
     // Prevent the browser's default F1 (help) behavior
     event.preventDefault();
@@ -2587,6 +2617,71 @@ const handleKeyDown = (event) => {
     }
 
     return false;
+  }
+
+  if (isArrowUp || isArrowDown) {
+    // Don't trigger if user is actively typing in form fields (except barcode field)
+    const activeElement = document.activeElement;
+    const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement?.tagName);
+    const isBarcodeField = activeElement === barcodeField.value;
+
+    if (!isInputField || isBarcodeField) {
+      event.preventDefault();
+
+      // Select the previous (Up) or next (Down) category, including "All Products"
+      const navList = categoryNavList.value;
+      const currentIndex = navList.findIndex(
+        (c) => String(c.id) === String(productFilters.value.category_id)
+      );
+      const startIndex = currentIndex === -1 ? 0 : currentIndex;
+      const newIndex = isArrowUp
+        ? Math.max(0, startIndex - 1)
+        : Math.min(navList.length - 1, startIndex + 1);
+
+      productFilters.value.category_id = navList[newIndex].id;
+      filterProducts();
+    }
+
+    return false;
+  }
+
+  if (isArrowLeft || isArrowRight) {
+    // Don't trigger if user is actively typing in form fields (except barcode field)
+    const activeElement = document.activeElement;
+    const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement?.tagName);
+    const isBarcodeField = activeElement === barcodeField.value;
+
+    if ((!isInputField || isBarcodeField) && infiniteScrollProducts.value.length > 0) {
+      event.preventDefault();
+
+      // Move the highlighted product card left/right through the visible grid
+      if (selectedProductIndex.value === -1) {
+        selectedProductIndex.value = 0;
+      } else if (isArrowLeft) {
+        selectedProductIndex.value = Math.max(0, selectedProductIndex.value - 1);
+      } else {
+        selectedProductIndex.value = Math.min(
+          infiniteScrollProducts.value.length - 1,
+          selectedProductIndex.value + 1
+        );
+      }
+    }
+
+    return false;
+  }
+
+  if (isEnter) {
+    // Don't trigger while typing anywhere (barcode/payment fields already handle their own Enter)
+    const activeElement = document.activeElement;
+    const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement?.tagName);
+
+    if (!isInputField && selectedProductIndex.value !== -1) {
+      const product = infiniteScrollProducts.value[selectedProductIndex.value];
+      if (product) {
+        event.preventDefault();
+        addToCart(product);
+      }
+    }
   }
 };
 
@@ -2726,6 +2821,10 @@ select.no-arrow::-ms-expand {
 .product-card-active {
   border-color: #2563eb;
   box-shadow: 0 0 0 2px #2563eb;
+}
+.product-card-selected {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 2px #f59e0b;
 }
 
 @media (max-width: 1399px) {
