@@ -481,20 +481,22 @@
                         </div>
                       </td>
                       <td class="px-4 py-3 text-right">
-                        <div v-if="item.discountApplied" class="flex flex-col">
-                          <span class="line-through text-gray-500 text-xs"
+                        <div class="flex flex-col items-end gap-1">
+                          <span
+                            v-if="item.discountApplied"
+                            class="line-through text-gray-500 text-xs"
                             >({{ page.props.currency || "Rs." }})
                             {{ (item.originalPrice||0).toFixed(2) }}</span
                           >
-                          <span class="text-green-600 font-semibold"
-                            >({{ page.props.currency || "Rs." }})
-                            {{ (item.price||0).toFixed(2) }}</span
-                          >
+                          <input
+                            type="number"
+                            :value="item.price"
+                            @input="updatePrice(index, $event.target.value)"
+                            class="w-24 text-right font-medium bg-white text-gray-800 border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            min="0"
+                            step="0.01"
+                          />
                         </div>
-                        <span v-else class="font-medium"
-                          >({{ page.props.currency || "Rs." }})
-                          {{ (item.price||0).toFixed(2) }}</span
-                        >
                       </td>
                       <td class="px-4 py-3 text-center">
                         <div class="flex items-center justify-center gap-2">
@@ -1853,6 +1855,13 @@ const updateQuantity = (index, newQty) => {
   }
 };
 
+// Update price in cart (manual override)
+const updatePrice = (index, newPrice) => {
+  const price = Math.max(0, parseFloat(newPrice) || 0);
+  form.items[index].price = price;
+  form.items[index].discountApplied = false;
+};
+
 // Clear cart
 const clearCart = () => {
   if (confirm("Are you sure you want to clear the cart?")) {
@@ -2418,11 +2427,19 @@ const printReceipt = () => {
                     font-weight: 600;
                     color: #000;
                 }
+                .item-name-row {
+                    page-break-inside: avoid;
+                    break-inside: avoid;
+                }
                 .item-name-row td {
                     border-bottom: none;
                     padding-bottom: 0;
                     font-weight: 800;
                     font-size: 13px;
+                }
+                .item-data-row {
+                    page-break-inside: avoid;
+                    break-inside: avoid;
                 }
                 .item-data-row td {
                     border-bottom: 1px dotted #000;
@@ -2450,6 +2467,8 @@ const printReceipt = () => {
                   font-size: 11px;
                     font-weight: 600;
                     color: #000;
+                    page-break-inside: avoid;
+                    break-inside: avoid;
                 }
                 .total-row {
                     display: flex;
@@ -2629,11 +2648,34 @@ const printReceipt = () => {
             <script type="text/javascript">
                 let printExecuted = false;
 
+                function fitPageToContent() {
+                    var heightPx = Math.max(
+                        document.body.scrollHeight,
+                        document.body.offsetHeight,
+                        document.documentElement.scrollHeight,
+                        document.documentElement.offsetHeight
+                    );
+                    var heightMm = Math.ceil((heightPx / 96 * 25.4) * 1.08) + 20;
+                    var styleEl = document.createElement('style');
+                    styleEl.innerHTML = '@page { size: ${width} ' + heightMm + 'mm; margin: 0; }';
+                    document.head.appendChild(styleEl);
+                }
+
+                function doPrint() {
+                    if (printExecuted) return;
+                    printExecuted = true;
+                    fitPageToContent();
+                    setTimeout(function() {
+                        window.print();
+                    }, 50);
+                }
+
                 window.onload = function() {
                     setTimeout(function() {
-                        if (!printExecuted) {
-                            printExecuted = true;
-                            window.print();
+                        if (document.fonts && document.fonts.ready) {
+                            document.fonts.ready.then(doPrint).catch(doPrint);
+                        } else {
+                            doPrint();
                         }
                     }, 300);
                 }
