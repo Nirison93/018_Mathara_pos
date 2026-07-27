@@ -30,7 +30,6 @@
     @php
         $totalLow = count($products);
         $shopLow = collect($products)->filter(fn($p) => ($p['shop_status'] ?? '') === 'Low')->count();
-        $storeLow = collect($products)->filter(fn($p) => ($p['store_status'] ?? '') === 'Low')->count();
     @endphp
 
     <table>
@@ -42,9 +41,6 @@
                 <th style="width:70px" class="text-center">Shop Qty</th>
                 <th style="width:70px" class="text-center">Shop Margin</th>
                 <th style="width:70px" class="text-center">Shop Status</th>
-                <th style="width:70px" class="text-center">Store Qty</th>
-                <th style="width:70px" class="text-center">Store Margin</th>
-                <th style="width:70px" class="text-center">Store Status</th>
             </tr>
         </thead>
         <tbody>
@@ -53,12 +49,9 @@
                     <td class="text-center">{{ $idx + 1 }}</td>
                     <td>{{ $p['name'] }}</td>
                     <td>{{ $p['barcode'] }}</td>
-                    <td class="text-center">{{ $p['shop_quantity_in_sales_unit'] }}</td>
+                    <td class="text-center">{{ $p['shop_quantity'] }}</td>
                     <td class="text-center">{{ $p['shop_low_stock_margin'] }}</td>
                     <td class="text-center">{{ $p['shop_status'] }}</td>
-                    <td class="text-center">{{ $p['store_quantity'] }}</td>
-                    <td class="text-center">{{ $p['store_low_stock_margin'] }}</td>
-                    <td class="text-center">{{ $p['store_status'] }}</td>
                 </tr>
             @endforeach
         </tbody>
