@@ -2843,7 +2843,6 @@ const handleKeyDown = (event) => {
       barcodeField.value.focus();
       barcodeField.value.select();
     }
-
     return false;
   }
 
