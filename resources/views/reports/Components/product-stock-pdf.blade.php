@@ -20,9 +20,6 @@
                 <th>#</th>
                 <th>Name</th>
                 <th>Shop Qty</th>
-                <th>Store Qty</th>
-                <th>Loose</th>
-                <!-- Removed Retail Price and Wholesale Price columns -->
             </tr>
         </thead>
         <tbody>
@@ -31,9 +28,6 @@
                     <td>{{ $idx + 1 }}</td>
                     <td>{{ $p['name'] }}</td>
                     <td>{{ $p['shop_qty_display'] }}</td>
-                    <td>{{ $p['store_qty_display'] }}</td>
-                    <td>{{ $p['loose_bundles'] }}</td>
-                    <!-- Removed Retail Price and Wholesale Price columns -->
                 </tr>
             @endforeach
         </tbody>

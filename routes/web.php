@@ -308,10 +308,6 @@ Route::middleware(['auth', 'role:0,1,2,3'])->group(function () {
         Route::get('/export/low-stock-shop/pdf', [ReportController::class, 'exportLowStockShopPdf'])->name('export.low-stock-shop.pdf');
         Route::get('/export/low-stock-shop/csv', [ReportController::class, 'exportLowStockShopCsv'])->name('export.low-stock-shop.csv');
 
-        // Products Low Stock - Store
-        Route::get('/low-stock-store', [ReportController::class, 'lowStockStoreReport'])->name('low-stock-store');
-        Route::get('/export/low-stock-store/pdf', [ReportController::class, 'exportLowStockStorePdf'])->name('export.low-stock-store.pdf');
-        Route::get('/export/low-stock-store/csv', [ReportController::class, 'exportLowStockStoreCsv'])->name('export.low-stock-store.csv');
         // Product Movement Based Sales Optimization Report
         Route::get('/product-movement-sales-optimization', [ReportController::class, 'productMovementSalesOptimizationReport'])->name('product-movement-sales-optimization');
         Route::get('/export/product-movement-sales-optimization/pdf', [ReportController::class, 'exportProductMovementSalesOptimizationPdf'])->name('export.product-movement-sales-optimization.pdf');
@@ -348,10 +344,6 @@ Route::middleware(['auth', 'role:0,1, 2,3'])->group(function () {
         Route::get('/export/low-stock-shop/pdf', [ReportController::class, 'exportLowStockShopPdf'])->name('export.low-stock-shop.pdf');
         Route::get('/export/low-stock-shop/csv', [ReportController::class, 'exportLowStockShopCsv'])->name('export.low-stock-shop.csv');
 
-        // Products Low Stock - Store
-        Route::get('/low-stock-store', [ReportController::class, 'lowStockStoreReport'])->name('low-stock-store');
-        Route::get('/export/low-stock-store/pdf', [ReportController::class, 'exportLowStockStorePdf'])->name('export.low-stock-store.pdf');
-        Route::get('/export/low-stock-store/csv', [ReportController::class, 'exportLowStockStoreCsv'])->name('export.low-stock-store.csv');
 
         // Product Movements Report - Track all inventory movements
         Route::get('/product-movements', [ReportController::class, 'productMovementReport'])->name('product-movements');

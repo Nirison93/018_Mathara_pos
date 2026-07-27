@@ -454,34 +454,13 @@ class ReportController extends Controller
      */
     public function exportProductStockPdf()
     {
-        // Commented out - requires barryvdh/laravel-dompdf package
-        /*
-        $productsStock = Product::select('id', 'name',   'qty', 'retail_price', 'wholesale_price')
-            ->orderBy('name')
-            ->get();
-
-        $pdf = Pdf::loadView('reports.Components.product-stock-pdf', [
-            'productsStock' => $productsStock,
-            'reportDate' => date('Y-m-d'),
-        ]);
-
-        return $pdf->download('product-stock-report-' . date('Y-m-d') . '.pdf');
-        */
-        $productsStock = Product::with(['purchaseUnit:id,symbol,name', 'transferUnit:id,symbol,name', 'salesUnit:id,symbol,name'])
+        $productsStock = Product::with(['salesUnit:id,symbol,name'])
             ->orderBy('name')
             ->get()
             ->map(function($p) {
-                // Calculate loose bundles (store_quantity_in_transfer_unit is total, loose is the remainder)
-                $purchaseQty = $p->store_quantity_in_purchase_unit ?? 0;
-                $rate = $p->purchase_to_transfer_rate ?? 1;
-                $totalBundles = $purchaseQty * $rate;
-                $looseBundles = ($p->store_quantity_in_transfer_unit ?? 0) - $totalBundles;
-                $looseBundles = $looseBundles < 0 ? 0 : $looseBundles;
                 return [
                     'name' => $p->name,
                     'shop_qty_display' => $p->shop_quantity . ' ' . ($p->salesUnit->symbol ?? $p->salesUnit->name ?? ''),
-                    'store_qty_display' => $p->store_quantity_in_purchase_unit . ' ' . ($p->purchaseUnit->symbol ?? $p->purchaseUnit->name ?? ''),
-                    'loose_bundles' => $looseBundles . ' ' . ($p->transferUnit->symbol ?? $p->transferUnit->name ?? ''),
                 ];
             });
 
@@ -509,20 +488,13 @@ class ReportController extends Controller
      */
     public function exportProductStockExcel()
     {
-        $productsStock = Product::with(['purchaseUnit:id,symbol,name', 'transferUnit:id,symbol,name', 'salesUnit:id,symbol,name'])
+        $productsStock = Product::with(['salesUnit:id,symbol,name'])
             ->orderBy('name')
             ->get()
             ->map(function($p) {
-                $purchaseQty = $p->store_quantity_in_purchase_unit ?? 0;
-                $rate = $p->purchase_to_transfer_rate ?? 1;
-                $totalBundles = $purchaseQty * $rate;
-                $looseBundles = ($p->store_quantity_in_transfer_unit ?? 0) - $totalBundles;
-                $looseBundles = $looseBundles < 0 ? 0 : $looseBundles;
                 return [
                     'name' => $p->name,
                     'shop_qty_display' => $p->shop_quantity . ' ' . ($p->salesUnit->symbol ?? $p->salesUnit->name ?? ''),
-                    'store_qty_display' => $p->store_quantity_in_purchase_unit . ' ' . ($p->purchaseUnit->symbol ?? $p->purchaseUnit->name ?? ''),
-                    'loose_bundles' => $looseBundles . ' ' . ($p->transferUnit->symbol ?? $p->transferUnit->name ?? ''),
                 ];
             });
 
@@ -532,7 +504,7 @@ class ReportController extends Controller
             'Content-Disposition' => "attachment; filename=\"$filename\"",
         ];
 
-        $columns = ['Product Name','Shop Qty','Store Qty','Loose'];
+        $columns = ['Product Name','Shop Qty'];
 
         $callback = function() use ($productsStock, $columns) {
             $file = fopen('php://output', 'w');
@@ -541,8 +513,6 @@ class ReportController extends Controller
                 fputcsv($file, [
                     $p['name'],
                     $p['shop_qty_display'],
-                    $p['store_qty_display'],
-                    $p['loose_bundles'],
                 ]);
             }
             fclose($file);
@@ -1248,7 +1218,7 @@ class ReportController extends Controller
         $currency = $currencySymbol?->currency ?? 'Rs.';
 
         // Get products with sales and movement data
-        $products = Product::select('id', 'name', 'barcode', 'shop_quantity', 'store_quantity_in_purchase_unit', 'retail_price', 'wholesale_price', 'sales_unit_id')
+        $products = Product::select('id', 'name', 'barcode', 'shop_quantity', 'retail_price', 'wholesale_price', 'sales_unit_id')
             ->with([
                 'salesProducts' => function($query) use ($startDate, $endDate) {
                     $query->select('id', 'product_id', 'quantity', 'price', 'total', 'sale_id')
@@ -1342,7 +1312,7 @@ class ReportController extends Controller
         $classificationFilter = $request->input('classification', null);
 
         // Rebuild the products collection (same logic as the page)
-        $products = Product::select('id', 'name', 'barcode', 'shop_quantity', 'store_quantity_in_purchase_unit', 'retail_price', 'wholesale_price')
+        $products = Product::select('id', 'name', 'barcode', 'shop_quantity', 'retail_price', 'wholesale_price')
             ->with([
                 'salesProducts' => function($query) use ($startDate, $endDate) {
                     $query->select('id', 'product_id', 'quantity', 'price', 'total', 'sale_id')
@@ -1359,7 +1329,7 @@ class ReportController extends Controller
             ->map(function ($product) {
                 $totalSalesQty = $product->salesProducts->sum('quantity');
                 $totalSalesAmount = $product->salesProducts->sum('total');
-                $totalStock = $product->shop_quantity + $product->store_quantity_in_purchase_unit;
+                $totalStock = $product->shop_quantity;
 
                 $daysDiff = max(1, Carbon::parse(request()->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d')))
                     ->diffInDays(Carbon::parse(request()->input('end_date', Carbon::now()->format('Y-m-d')))));
@@ -1432,7 +1402,7 @@ class ReportController extends Controller
         $classificationFilter = $request->input('classification', null);
 
         // Rebuild products same as page
-        $products = Product::select('id', 'name', 'barcode', 'shop_quantity', 'store_quantity_in_purchase_unit', 'retail_price', 'wholesale_price')
+        $products = Product::select('id', 'name', 'barcode', 'shop_quantity', 'retail_price', 'wholesale_price')
             ->with([
                 'salesProducts' => function($query) use ($startDate, $endDate) {
                     $query->select('id', 'product_id', 'quantity', 'price', 'total', 'sale_id')
@@ -1445,7 +1415,7 @@ class ReportController extends Controller
             ->map(function ($product) {
                 $totalSalesQty = $product->salesProducts->sum('quantity');
                 $totalSalesAmount = $product->salesProducts->sum('total');
-                $totalStock = $product->shop_quantity + $product->store_quantity_in_purchase_unit;
+                $totalStock = $product->shop_quantity;
 
                 $daysDiff = max(1, Carbon::parse(request()->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d')))
                     ->diffInDays(Carbon::parse(request()->input('end_date', Carbon::now()->format('Y-m-d')))));
@@ -2332,10 +2302,9 @@ class ReportController extends Controller
     {
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
-        $filterType = $request->input('filter', 'both');
 
         $query = Product::select(
-                'id', 'name', 'barcode', 'shop_quantity', 'shop_low_stock_margin', 'store_quantity_in_purchase_unit', 'store_low_stock_margin', 'updated_at'
+                'id', 'name', 'barcode', 'shop_quantity', 'shop_low_stock_margin', 'updated_at'
             );
 
         if ($startDate && $endDate) {
@@ -2348,16 +2317,7 @@ class ReportController extends Controller
             }
         }
 
-        if ($filterType === 'shop') {
-            $query->whereColumn('shop_quantity', '<=', 'shop_low_stock_margin');
-        } elseif ($filterType === 'store') {
-            $query->whereColumn('store_quantity_in_purchase_unit', '<=', 'store_low_stock_margin');
-        } else {
-            $query->where(function($q) {
-                $q->whereColumn('shop_quantity', '<=', 'shop_low_stock_margin')
-                  ->orWhereColumn('store_quantity_in_purchase_unit', '<=', 'store_low_stock_margin');
-            });
-        }
+        $query->whereColumn('shop_quantity', '<=', 'shop_low_stock_margin');
 
         $products = $query->orderBy('name')->get();
 
@@ -2368,7 +2328,7 @@ class ReportController extends Controller
             'Content-Disposition' => "attachment; filename=\"$filename\"",
         ];
 
-        $columns = ['ID','Name','Barcode','Shop Qty','Shop Margin','Shop Status','Store Qty','Store Margin','Store Status'];
+        $columns = ['ID','Name','Barcode','Shop Qty','Shop Margin','Shop Status'];
 
         $callback = function() use ($products, $columns) {
             $file = fopen('php://output', 'w');
@@ -2376,7 +2336,6 @@ class ReportController extends Controller
 
             foreach ($products as $p) {
                 $shopStatus = $p->shop_quantity <= $p->shop_low_stock_margin ? 'Low' : 'OK';
-                $storeStatus = $p->store_quantity_in_purchase_unit <= $p->store_low_stock_margin ? 'Low' : 'OK';
                 fputcsv($file, [
                     $p->id,
                     $p->name,
@@ -2384,9 +2343,6 @@ class ReportController extends Controller
                     $p->shop_quantity,
                     $p->shop_low_stock_margin,
                     $shopStatus,
-                    $p->store_quantity_in_purchase_unit,
-                    $p->store_low_stock_margin,
-                    $storeStatus,
                 ]);
             }
 
@@ -2403,10 +2359,9 @@ class ReportController extends Controller
     {
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
-        $filterType = $request->input('filter', 'both');
 
         $query = Product::select(
-                'id', 'name', 'barcode', 'shop_quantity', 'shop_low_stock_margin', 'store_quantity_in_purchase_unit', 'store_low_stock_margin', 'updated_at'
+                'id', 'name', 'barcode', 'shop_quantity', 'shop_low_stock_margin', 'updated_at'
             );
 
         if ($startDate && $endDate) {
@@ -2419,16 +2374,7 @@ class ReportController extends Controller
             }
         }
 
-        if ($filterType === 'shop') {
-            $query->whereColumn('shop_quantity', '<=', 'shop_low_stock_margin');
-        } elseif ($filterType === 'store') {
-            $query->whereColumn('store_quantity_in_purchase_unit', '<=', 'store_low_stock_margin');
-        } else {
-            $query->where(function($q) {
-                $q->whereColumn('shop_quantity', '<=', 'shop_low_stock_margin')
-                  ->orWhereColumn('store_quantity_in_purchase_unit', '<=', 'store_low_stock_margin');
-            });
-        }
+        $query->whereColumn('shop_quantity', '<=', 'shop_low_stock_margin');
 
         $products = $query->orderBy('name')->get()->map(function ($item) {
             return [
@@ -2437,10 +2383,7 @@ class ReportController extends Controller
                 'barcode' => $item->barcode,
                 'shop_quantity' => $item->shop_quantity,
                 'shop_low_stock_margin' => $item->shop_low_stock_margin,
-                'store_quantity' => $item->store_quantity_in_purchase_unit,
-                'store_low_stock_margin' => $item->store_low_stock_margin,
                 'shop_status' => $item->shop_quantity <= $item->shop_low_stock_margin ? 'Low' : 'OK',
-                'store_status' => $item->store_quantity_in_purchase_unit <= $item->store_low_stock_margin ? 'Low' : 'OK',
             ];
         });
 
@@ -2591,150 +2534,6 @@ class ReportController extends Controller
                 'endDate' => $endDate
             ]);
             return $pdf->download('low-stock-shop-report-' . date('Y-m-d') . '.pdf');
-        }
-
-        return back()->with('error', 'PDF export not available. Install barryvdh/laravel-dompdf package.');
-    }
-
-    // ==================== STORE LOW STOCK REPORT ====================
-
-    public function lowStockStoreReport(Request $request)
-    {
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
-
-        $query = Product::with(['salesUnit'])->select(
-                'id', 'name', 'barcode', 'store_quantity_in_purchase_unit', 'store_low_stock_margin', 'sales_unit_id', 'updated_at'
-            );
-
-        if ($startDate && $endDate) {
-            try {
-                $s = Carbon::parse($startDate)->startOfDay();
-                $e = Carbon::parse($endDate)->endOfDay();
-                $query->whereBetween('updated_at', [$s, $e]);
-            } catch (\Exception $ex) {
-                // ignore invalid dates
-            }
-        }
-
-        $query->whereColumn('store_quantity_in_purchase_unit', '<=', 'store_low_stock_margin');
-
-        $products = $query->orderBy('name')->get()->map(function ($item) {
-            return [
-                'id' => $item->id,
-                'name' => $item->name,
-                'barcode' => $item->barcode,
-                'store_quantity' => (int) $item->store_quantity_in_purchase_unit,
-                'store_low_stock_margin' => (int) $item->store_low_stock_margin,
-                'sales_unit' => $item->salesUnit ? $item->salesUnit->name : 'N/A',
-                'symbol' => $item->salesUnit ? $item->salesUnit->symbol : 'N/A',
-                'status' => $item->store_quantity_in_purchase_unit <= $item->store_low_stock_margin ? 'Low' : 'OK',
-            ];
-        });
-
-        $currencySymbol = CompanyInformation::first();
-
-        return Inertia::render('Reports/LowStockStoreReport', [
-            'products' => $products,
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-            'currencySymbol' => $currencySymbol,
-        ]);
-    }
-
-    public function exportLowStockStoreCsv(Request $request)
-    {
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
-
-        $query = Product::select(
-                'id', 'name', 'barcode', 'store_quantity_in_purchase_unit', 'store_low_stock_margin', 'updated_at'
-            );
-
-        if ($startDate && $endDate) {
-            try {
-                $s = Carbon::parse($startDate)->startOfDay();
-                $e = Carbon::parse($endDate)->endOfDay();
-                $query->whereBetween('updated_at', [$s, $e]);
-            } catch (\Exception $ex) {
-                // ignore invalid dates
-            }
-        }
-
-        $query->whereColumn('store_quantity_in_purchase_unit', '<=', 'store_low_stock_margin');
-        $products = $query->orderBy('name')->get();
-
-        $filename = 'low-stock-store-report-' . date('Y-m-d') . '.csv';
-
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"$filename\"",
-        ];
-
-        $columns = ['ID','Name','Barcode','Store Qty','Store Margin','Status'];
-
-        $callback = function() use ($products, $columns) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, $columns);
-
-            foreach ($products as $p) {
-                $status = $p->store_quantity_in_purchase_unit <= $p->store_low_stock_margin ? 'Low' : 'OK';
-                fputcsv($file, [
-                    $p->id,
-                    $p->name,
-                    $p->barcode,
-                    $p->store_quantity_in_purchase_unit,
-                    $p->store_low_stock_margin,
-                    $status,
-                ]);
-            }
-
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
-    }
-
-    public function exportLowStockStorePdf(Request $request)
-    {
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
-
-        $query = Product::with(['salesUnit'])->select(
-                'id', 'name', 'barcode', 'store_quantity_in_purchase_unit', 'store_low_stock_margin', 'sales_unit_id', 'updated_at'
-            );
-
-        if ($startDate && $endDate) {
-            try {
-                $s = Carbon::parse($startDate)->startOfDay();
-                $e = Carbon::parse($endDate)->endOfDay();
-                $query->whereBetween('updated_at', [$s, $e]);
-            } catch (\Exception $ex) {
-                // ignore invalid dates
-            }
-        }
-
-        $query->whereColumn('store_quantity_in_purchase_unit', '<=', 'store_low_stock_margin');
-        $products = $query->orderBy('name')->get()->map(function ($item) {
-            return [
-                'id' => $item->id,
-                'name' => $item->name,
-                'barcode' => $item->barcode,
-                'store_quantity' => $item->store_quantity_in_purchase_unit,
-                'store_low_stock_margin' => $item->store_low_stock_margin,
-                'sales_unit' => $item->salesUnit ? $item->salesUnit->name : 'N/A',
-                'symbol' => $item->salesUnit ? $item->salesUnit->symbol : 'N/A',
-                'status' => $item->store_quantity_in_purchase_unit <= $item->store_low_stock_margin ? 'Low' : 'OK',
-            ];
-        });
-
-        if (class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.Components.low-stock-store-pdf', [
-                'products' => $products,
-                'startDate' => $startDate,
-                'endDate' => $endDate
-            ]);
-            return $pdf->download('low-stock-store-report-' . date('Y-m-d') . '.pdf');
         }
 
         return back()->with('error', 'PDF export not available. Install barryvdh/laravel-dompdf package.');

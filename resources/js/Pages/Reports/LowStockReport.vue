@@ -14,27 +14,14 @@
               >
                 ← {{ $t('common.back') }}
               </button>
-              <h1 class="text-3xl font-bold text-white">⚠️ {{ $t('reports.shop_low_stock') }} (Store & Shop)</h1>
+              <h1 class="text-3xl font-bold text-white">⚠️ {{ $t('reports.shop_low_stock') }}</h1>
             </div>
             <p class="text-gray-400">Products that are at or below configured low-stock margins.</p>
           </div>
-
-          <!-- <div class="flex items-center gap-2 bg-gray-800 rounded-lg p-3 shadow-lg">
-
-
-            <select v-model="filterType" class="px-3 py-1.5 bg-gray-700 text-white text-sm rounded">
-              <option value="both">All</option>
-              <option value="shop">Shop Low</option>
-              <option value="store">Store Low</option>
-            </select>
-
-            <button @click="filterReports" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded transition">Apply</button>
-            <button @click="resetFilter" class="px-4 py-1.5 bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold rounded transition">Reset</button>
-          </div> -->
         </div>
 
         <!-- Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div class="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg p-6 shadow-lg">
             <div class="flex items-center justify-between">
               <div>
@@ -52,16 +39,6 @@
                 <h2 class="text-3xl font-bold text-white">{{ shopLowCount }}</h2>
               </div>
               <div class="text-4xl">🏪</div>
-            </div>
-          </div>
-
-          <div class="bg-gradient-to-br from-green-600 to-green-700 rounded-lg p-6 shadow-lg">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-green-100 text-sm mb-1">Store Low</p>
-                <h2 class="text-3xl font-bold text-white">{{ storeLowCount }}</h2>
-              </div>
-              <div class="text-4xl">🏬</div>
             </div>
           </div>
         </div>
@@ -96,9 +73,6 @@
                   <th class="px-4 py-3 text-right text-sm font-semibold text-gray-300">Shop Qty</th>
                   <th class="px-4 py-3 text-right text-sm font-semibold text-gray-300">Shop Margin</th>
                   <th class="px-4 py-3 text-center text-sm font-semibold text-gray-300">Shop Status</th>
-                  <th class="px-4 py-3 text-right text-sm font-semibold text-gray-300">Store Qty</th>
-                  <th class="px-4 py-3 text-right text-sm font-semibold text-gray-300">Store Margin</th>
-                  <th class="px-4 py-3 text-center text-sm font-semibold text-gray-300">Store Status</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-700 text-gray-300">
@@ -109,9 +83,6 @@
                   <td class="px-4 py-3 text-right font-semibold">{{ p.shop_quantity }}</td>
                   <td class="px-4 py-3 text-right">{{ p.shop_low_stock_margin }}</td>
                   <td class="px-4 py-3 text-center"><span :class="statusColor(p.shop_status)">{{ p.shop_status }}</span></td>
-                  <td class="px-4 py-3 text-right">{{ p.store_quantity }}</td>
-                  <td class="px-4 py-3 text-right">{{ p.store_low_stock_margin }}</td>
-                  <td class="px-4 py-3 text-center"><span :class="statusColor(p.store_status)">{{ p.store_status }}</span></td>
                 </tr>
               </tbody>
             </table>
@@ -126,7 +97,7 @@
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { logActivity } from '@/composables/useActivityLog';
 import { useI18n } from "vue-i18n";
@@ -136,12 +107,10 @@ const props = defineProps({
   products: { type: Array, default: () => [] },
   startDate: String,
   endDate: String,
-  filter: { type: String, default: 'both' }
 });
 
 const totalLow = computed(() => props.products.length);
 const shopLowCount = computed(() => props.products.filter(p => p.shop_status === 'Low').length);
-const storeLowCount = computed(() => props.products.filter(p => p.store_status === 'Low').length);
 
 const statusColor = (s) => {
   if (!s) return 'text-gray-300';
@@ -152,33 +121,17 @@ const statusColor = (s) => {
 import { ref } from 'vue';
 const startDate = ref(props.startDate || '');
 const endDate = ref(props.endDate || '');
-const filterType = ref(props.filter || 'both');
 
-const exportPdfUrl = computed(() => route('reports.export.low-stock.pdf', { start_date: startDate.value, end_date: endDate.value, filter: filterType.value }));
-const exportCsvUrl = computed(() => route('reports.export.low-stock.csv', { start_date: startDate.value, end_date: endDate.value, filter: filterType.value }));
+const exportPdfUrl = computed(() => route('reports.export.low-stock.pdf', { start_date: startDate.value, end_date: endDate.value }));
+const exportCsvUrl = computed(() => route('reports.export.low-stock.csv', { start_date: startDate.value, end_date: endDate.value }));
 
 const exportPdf = async () => {
-  await logActivity('create', 'low_stock_report', { action: 'export_pdf', total: props.products.length, start_date: startDate.value, end_date: endDate.value, filter: filterType.value });
+  await logActivity('create', 'low_stock_report', { action: 'export_pdf', total: props.products.length, start_date: startDate.value, end_date: endDate.value });
   window.location.href = exportPdfUrl.value;
 };
 
 const exportCsv = async () => {
-  await logActivity('create', 'low_stock_report', { action: 'export_csv', total: props.products.length, start_date: startDate.value, end_date: endDate.value, filter: filterType.value });
+  await logActivity('create', 'low_stock_report', { action: 'export_csv', total: props.products.length, start_date: startDate.value, end_date: endDate.value });
   window.location.href = exportCsvUrl.value;
-};
-
-const filterReports = () => {
-  const params = {};
-  if (startDate.value) params.start_date = startDate.value;
-  if (endDate.value) params.end_date = endDate.value;
-  if (filterType.value) params.filter = filterType.value;
-  router.get(route('reports.low-stock'), params, { preserveState: true, preserveScroll: true });
-};
-
-const resetFilter = () => {
-  startDate.value = '';
-  endDate.value = '';
-  filterType.value = 'both';
-  router.get(route('reports.low-stock'), {}, { preserveState: false, preserveScroll: false });
 };
 </script>
