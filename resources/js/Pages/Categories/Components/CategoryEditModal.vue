@@ -81,14 +81,21 @@
                     <!-- Category Code -->
                     <div>
                       <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Category Code
+                        Category Code <span class="text-red-500">*</span>
                       </label>
                       <input
-                        :value="categoryCodePreview"
+                        v-model="form.category_code"
                         type="text"
-                        disabled
-                        class="w-full px-3 py-2 text-sm text-gray-500 bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed"
+                        class="w-full px-3 py-2 text-sm text-gray-800 bg-white/60 backdrop-blur-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter category code"
+                        maxlength="20"
+                        required
+                        @input="onCategoryCodeInput"
+                        title="Alphanumeric characters only."
                       />
+                      <p v-if="form.errors.category_code" class="mt-1 text-sm text-red-500">
+                        {{ form.errors.category_code }}
+                      </p>
                     </div>
 
                     <!-- Parent Category -->
@@ -184,12 +191,14 @@ const availableCategories = computed(() => {
   return props.categories.filter(cat => cat.status != 2 && cat.id !== props.category?.id);
 });
 
-const categoryCodePreview = computed(() => {
-  return (form.name || '').trim().slice(0, 3).toUpperCase();
-});
+const onCategoryCodeInput = (e) => {
+  e.target.value = e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  form.category_code = e.target.value;
+};
 
 const form = useForm({
   name: '',
+  category_code: '',
   parent_id: null,
   status: '1',
 });
@@ -197,6 +206,7 @@ const form = useForm({
 watch(() => props.category, (newCategory) => {
   if (newCategory) {
     form.name = newCategory.name;
+    form.category_code = newCategory.category_code || '';
     form.parent_id = newCategory.parent_id;
     form.status = String(newCategory.status);
   }
@@ -210,6 +220,7 @@ const submit = () => {
         category_id: props.category.id,
         category_name: form.name,
         old_name: props.category.name,
+        category_code: form.category_code,
         parent_id: form.parent_id,
         status: form.status,
       });

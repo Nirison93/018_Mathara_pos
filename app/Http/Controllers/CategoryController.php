@@ -102,13 +102,15 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required','string','max:255', Rule::unique('categories','name')->ignore($category->id)],
+            'category_code' => ['required','string','max:20', Rule::unique('categories','category_code')->ignore($category->id)],
             'parent_id' => 'nullable|exists:categories,id',
             'status' => 'required|in:0,1',
         ], [
             'name.unique' => 'A category with this name already exists.',
+            'category_code.unique' => 'A category with this code already exists.',
         ]);
 
-        $validated['category_code'] = mb_strtoupper(mb_substr($validated['name'], 0, 3));
+        $validated['category_code'] = mb_strtoupper($validated['category_code']);
 
         try {
             $category->update($validated);
