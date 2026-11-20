@@ -501,7 +501,7 @@
                       <td class="px-4 py-3 text-center">
                         <div class="flex items-center justify-center gap-2">
                           <button
-                            @click="updateQuantity(index, item.quantity - 1)"
+                            @click="updateQuantity(index, item.quantity - 0.5)"
                             class="w-7 h-7 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-bold transition"
                           >
                             -
@@ -510,13 +510,14 @@
                             type="number"
                             :value="item.quantity"
                             @input="
-                              updateQuantity(index, parseInt($event.target.value) || 1)
+                              updateQuantityInput(index, $event.target.value)
                             "
                             class="w-16 text-center font-semibold bg-white text-gray-800 border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            min="1"
+                            min="0.01"
+                            step="0.01"
                           />
                           <button
-                            @click="updateQuantity(index, item.quantity + 1)"
+                            @click="updateQuantity(index, item.quantity + 0.5)"
                             class="w-7 h-7 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-bold transition"
                           >
                             +
@@ -1848,10 +1849,19 @@ const removeItemDiscount = (index) => {
 
 // Update quantity in cart
 const updateQuantity = (index, newQty) => {
-  if (newQty > 0) {
-    form.items[index].quantity = newQty;
-  } else {
-    removeItem(index);
+  const quantity = Math.round((parseFloat(newQty) || 0) * 100) / 100;
+  if (quantity > 0) {
+    form.items[index].quantity = quantity;
+  }
+};
+
+// Allow the input to be temporarily empty while typing; do not remove the cart row.
+const updateQuantityInput = (index, value) => {
+  if (String(value).trim() === "") return;
+
+  const quantity = parseFloat(value);
+  if (Number.isFinite(quantity) && quantity > 0) {
+    updateQuantity(index, quantity);
   }
 };
 
@@ -2138,7 +2148,7 @@ const selectProductFromModal = async (product) => {
   const quantity = productQuantities.value[product.id] || 1;
 
   if (quantity <= 0 || quantity > product.shop_quantity_in_sales_unit) {
-    alert(`Please enter a valid quantity (1-${product.shop_quantity_in_sales_unit})`);
+    alert(`Please enter a valid quantity (0.01-${product.shop_quantity_in_sales_unit})`);
     return;
   }
 

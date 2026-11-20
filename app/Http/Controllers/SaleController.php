@@ -21,6 +21,7 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Illuminate\Validation\ValidationException;
 
 class SaleController extends Controller
 {
@@ -192,7 +193,7 @@ class SaleController extends Controller
             'customer_type' => 'required|in:retail,wholesale',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|numeric|min:1',
+            'items.*.quantity' => 'required|numeric|gt:0',
             'items.*.price' => 'required|numeric|min:0',
             'discount' => 'nullable|numeric|min:0',
             'payments' => 'required|array|min:1',
@@ -200,7 +201,20 @@ class SaleController extends Controller
             'payments.*.amount' => 'required|numeric|min:0',
         ]);
 
+        $requestedQuantities = collect($request->items)
+            ->groupBy('product_id')
+            ->map(fn ($items) => $items->sum(fn ($item) => (float) $item['quantity']));
 
+        foreach ($requestedQuantities as $productId => $requestedQuantity) {
+            $product = Product::find($productId);
+            if (!$product || (float) $product->shop_quantity < $requestedQuantity) {
+                throw ValidationException::withMessages([
+                    'items' => $product
+                        ? "Insufficient stock for {$product->name}. Available: {$product->shop_quantity}"
+                        : 'One or more products are no longer available.',
+                ]);
+            }
+        }
 
 
         try {
