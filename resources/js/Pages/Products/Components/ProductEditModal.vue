@@ -89,14 +89,14 @@
                   />
                 </div>
 
-                <!-- Type -->
+                <!-- Unit -->
                 <div>
-                  <label class="block mb-2 text-sm font-medium text-gray-700">Type</label>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">Unit</label>
                   <select
                     v-model="form.type_id"
                     class="w-full px-4 py-2 text-gray-800 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="">Select Type</option>
+                    <option value="">Select Unit</option>
                     <option v-for="type in types" :key="type.id" :value="type.id">
                       {{ type.name }}
                     </option>

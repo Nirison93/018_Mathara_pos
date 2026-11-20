@@ -146,16 +146,16 @@
               </div>
             </div>
 
-            <!-- Type -->
+            <!-- Unit -->
             <div>
-              <label class="block mb-2 text-sm font-medium text-gray-700">Type</label>
+              <label class="block mb-2 text-sm font-medium text-gray-700">Unit</label>
               <div class="flex gap-2">
                 <select
                   v-model="form.type_id"
                   class="flex-1 min-w-0 px-4 py-2 text-gray-800 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                  title="Select Type"
+                  title="Select Unit"
                 >
-                  <option value="">Select Type</option>
+                  <option value="">Select Unit</option>
                   <option v-for="type in types" :key="type.id" :value="type.id">
                     {{ type.name }}
                   </option>
@@ -165,7 +165,7 @@
                   type="button"
                   @click="openTypeModal"
                   class="px-3 py-2.5 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition duration-200 flex-shrink-0"
-                  title="Add New Type"
+                  title="Add New Unit"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

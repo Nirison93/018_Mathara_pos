@@ -74,7 +74,7 @@
                     :class="{ 'border-red-500': validationErrors.type || form.errors.type }"
                     required
                   >
-                    <option value="">Select Type</option>
+                    <option value="">Select Unit</option>
                     <option value="0">Percentage (%)</option>
                     <option value="1">Fixed Amount ({{ currencySymbol || 'Rs' }})</option>
                   </select>

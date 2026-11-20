@@ -198,7 +198,7 @@ export default {
     enter_barcode: 'Enter or scan barcode',
     search_brands: 'Search brands...',
     search_categories: 'Search categories...',
-    select_type: 'Select Type',
+    select_type: 'Select Unit',
     pricing_information: 'Pricing Information',
     purchase_price_label: 'Purchase Price',
     wholesale_price_label: 'Wholesale Price (per sales unit)',
