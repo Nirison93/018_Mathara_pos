@@ -2554,8 +2554,8 @@ const printReceipt = () => {
                     <thead>
                         <tr>
                             <th class="item-name">භාණ්ඩය</th>
-                            <th class="item-price">වෙළද මිල​</th>
-                            <th class="item-price">අපේ මිල​​</th>
+                            <th class="item-price"> මිල​</th>
+                             
                             <th class="item-price">ප්‍රමාණය​​</th>
                             <th class="item-total">එකතුව</th>
                         </tr>
@@ -2570,7 +2570,7 @@ const printReceipt = () => {
                             <tr class="item-data-row">
                                 <td></td>
                                 <td class="item-price">${(item.market_price||0).toFixed(2)}</td>
-                                <td class="item-price">${(item.price||0).toFixed(2)}</td>
+                               
                                 <td class="item-price">${item.quantity}</td>
                                 <td class="item-total">${(
                                   (item.price||0) * item.quantity
