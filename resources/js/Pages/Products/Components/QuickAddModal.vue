@@ -7,7 +7,7 @@
         <h2 class="text-2xl font-bold text-gray-800">
           Add New
           {{
-            type === "unit"
+            type === "unit" || type === "type"
               ? "Measurement Unit"
               : type.charAt(0).toUpperCase() + type.slice(1)
           }}
@@ -158,7 +158,7 @@
                 required
                 class="w-full px-4 py-2.5 text-gray-800 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Select Type</option>
+                <option value="">Select Unit</option>
                 <option value="0">Inclusive</option>
                 <option value="1">Exclusive</option>
               </select>
@@ -191,7 +191,7 @@
                 required
                 class="w-full px-4 py-2.5 text-gray-800 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Select Type</option>
+                <option value="">Select Unit</option>
                 <option value="0">Percentage (%)</option>
                 <option value="1">Fixed Amount</option>
               </select>

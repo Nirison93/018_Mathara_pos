@@ -192,16 +192,13 @@ class SaleController extends Controller
             'customer_type' => 'required|in:retail,wholesale',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|numeric|min:1',
+            'items.*.quantity' => 'required|numeric|gt:0',
             'items.*.price' => 'required|numeric|min:0',
             'discount' => 'nullable|numeric|min:0',
             'payments' => 'required|array|min:1',
             'payments.*.payment_type' => 'required|in:0,1,2',
             'payments.*.amount' => 'required|numeric|min:0',
         ]);
-
-
-
 
         try {
             DB::beginTransaction();

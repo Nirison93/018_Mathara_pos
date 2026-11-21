@@ -1048,6 +1048,60 @@ class ReportController extends Controller
 
         $totalSalesCount = Sale::whereBetween('sale_date', [$startDate, $endDate])->count();
 
+        $salesDetails = Sale::with([
+                'customer:id,name',
+                'user:id,name',
+                'products:id,sale_id,product_id,quantity,price,total,discount_amount,net_amount,is_return',
+                'products.product:id,name,purchase_price',
+            ])
+            ->whereBetween('sale_date', [$startDate, $endDate])
+            ->orderByDesc('sale_date')
+            ->orderByDesc('id')
+            ->paginate(25)
+            ->withQueryString()
+            ->through(function ($sale) {
+                $activeProducts = $sale->products->where('is_return', false);
+                $itemsSold = (float) $activeProducts->sum('quantity');
+                $cost = (float) $activeProducts->sum(function ($item) {
+                    return (float) $item->quantity * (float) ($item->product->purchase_price ?? 0);
+                });
+                $revenue = (float) $activeProducts->sum('net_amount');
+                $returnedAmount = (float) $sale->products
+                    ->where('is_return', true)
+                    ->sum('net_amount');
+
+                return [
+                    'id' => $sale->id,
+                    'invoice_no' => $sale->invoice_no,
+                    'sale_date' => optional($sale->sale_date)->format('Y-m-d'),
+                    'customer' => $sale->customer?->name ?: 'Walk-in Customer',
+                    'cashier' => $sale->user?->name,
+                    'sale_type' => $sale->type == 2 ? 'Wholesale' : 'Retail',
+                    'items_sold' => number_format($itemsSold, 2),
+                    'subtotal' => number_format((float) $sale->total_amount, 2),
+                    'discount' => number_format((float) $sale->discount, 2),
+                    'net_amount' => number_format((float) $revenue, 2),
+                    'cost' => number_format($cost, 2),
+                    'profit' => number_format($revenue - $cost, 2),
+                    'returned_amount' => number_format($returnedAmount, 2),
+                    'payment_status' => (float) $sale->balance > 0 ? 'Credit' : 'Paid',
+                    'balance' => number_format((float) $sale->balance, 2),
+                ];
+            });
+
+        $activeSaleProducts = SalesProduct::where('is_return', false)
+            ->whereHas('sale', function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('sale_date', [$startDate, $endDate]);
+            })
+            ->with('product:id,purchase_price')
+            ->get();
+
+        $salesTotal = (float) $activeSaleProducts->sum('net_amount');
+        $itemsSoldTotal = (float) $activeSaleProducts->sum('quantity');
+        $costTotal = (float) $activeSaleProducts->sum(function ($item) {
+            return (float) $item->quantity * (float) ($item->product->purchase_price ?? 0);
+        });
+
         // Product Sales Report
         $productSalesReport = Product::select('id', 'name', 'barcode')
             ->with([
@@ -1122,6 +1176,11 @@ class ReportController extends Controller
             'incomeSummary' => $incomeSummary,
             'salesSummary' => $salesSummary,
             'productSalesReport' => $productSalesReport,
+            'salesDetails' => $salesDetails,
+            'salesTotal' => number_format($salesTotal, 2),
+            'itemsSoldTotal' => number_format($itemsSoldTotal, 2),
+            'costTotal' => number_format($costTotal, 2),
+            'profitTotal' => number_format($salesTotal - $costTotal, 2),
             'totalIncome' => number_format($totalIncome, 2),
             'totalSalesCount' => $totalSalesCount,
             'startDate' => $startDate,

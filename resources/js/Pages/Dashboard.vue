@@ -75,7 +75,7 @@ onMounted(() => {
 
           <button
             type="button"
-            v-if="[0, 1, 2, 3].includes($page.props.auth.user.role)"
+            v-if="[0, 1, 2].includes($page.props.auth.user.role)"
             @click="setActiveTab('shops')"
             :class="[
               activeTab === 'shops'
@@ -127,6 +127,7 @@ onMounted(() => {
           <span class="text-2xl">📦</span> {{ $t('dashboard.inventory_management') }}
         </h3>
         <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+
           <Link
             v-if="[0, 1 ,3].includes($page.props.auth.user.role)"
             :href="route('products.index')"
@@ -319,6 +320,17 @@ onMounted(() => {
           <span class="text-2xl">📊</span> {{ $t('dashboard.report_management') }}
         </h3>
         <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+
+          <Link
+            v-if="[0, 1, 2].includes($page.props.auth.user.role)"
+            :href="route('reports.sales')"
+            class="group bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-xl hover:border-gray-300 hover:-translate-y-0.5 transition-all duration-300"
+          >
+            <div class="text-3xl mb-3">🧾</div>
+            <div class="font-semibold text-gray-900 mb-1">Sales Report</div>
+            <div class="text-sm text-gray-600">View sales, profit, cost and invoices</div>
+          </Link>
+          
           <Link
             v-if="[0, 1, 3].includes($page.props.auth.user.role)"
             :href="route('reports.low-stock-shop')"
