@@ -1229,7 +1229,7 @@ const printQuotationAfterUpdate = () => {
       props.customers.find((c) => c.id === form.customer_id)?.name || "Walk-in Customer";
     const currency = page.props.currency || "Rs.";
     const footerMessage =
-      billSetting.footer_description || "Thank you for your business!";
+      billSetting.footer_description || "Thank you for your business - POS System By Online මුදලාලි!";
 
     const quotationContent = `
             <!DOCTYPE html>

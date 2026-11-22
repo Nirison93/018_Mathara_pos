@@ -996,8 +996,11 @@
             <label class="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
             <div class="grid grid-cols-2 gap-2">
               <button
+                ref="cashPaymentButton"
                 type="button"
                 @click="selectPaymentMethod(0)"
+                @keydown.enter.prevent.stop="selectPaymentMethod(0)"
+                @keydown.space.prevent.stop="selectPaymentMethod(0)"
                 :class="[
                   'px-4 py-2.5 rounded-[5px] text-sm font-semibold transition border',
                   paymentMethod === 0
@@ -1010,6 +1013,8 @@
               <button
                 type="button"
                 @click="selectPaymentMethod(1)"
+                @keydown.enter.prevent.stop="selectPaymentMethod(1)"
+                @keydown.space.prevent.stop="selectPaymentMethod(1)"
                 :class="[
                   'px-4 py-2.5 rounded-[5px] text-sm font-semibold transition border',
                   paymentMethod === 1
@@ -1027,10 +1032,11 @@
               >Amount ({{ page.props.currency || "Rs." }})</label
             >
             <input
+              ref="paymentAmountField"
               type="text"
               :value="paymentAmount"
               @input="onPaymentAmountInput"
-              @keydown.enter.prevent="finalizePaymentAmount"
+              @keydown.enter.prevent="addPayment"
               @keydown.tab="finalizePaymentAmount"
               inputmode="decimal"
               class="w-full px-4 py-3 bg-white text-gray-800 border border-gray-300 rounded-[5px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
@@ -1044,6 +1050,7 @@
                 v-for="value in [100, 500, 1000, 2000, 5000]"
                 :key="value"
                 type="button"
+                tabindex="-1"
                 @click="addQuickAmount(value)"
                 class="py-2 rounded-[5px] border border-gray-300 bg-gray-50 text-gray-700 text-sm font-semibold hover:bg-gray-100 transition"
               >
@@ -1058,6 +1065,7 @@
                 v-for="digit in ['1','2','3','4','5','6','7','8','9','C','0','←']"
                 :key="digit"
                 type="button"
+                tabindex="-1"
                 @click="handleKeypadPress(digit)"
                 :class="[
                   'py-3 rounded-[5px] font-bold transition',
@@ -1174,7 +1182,10 @@
 
           <div class="flex gap-3 justify-center">
             <button
+              ref="printReceiptButton"
+              type="button"
               @click="printAndClose"
+              @keydown.enter.prevent.stop="printAndClose"
               class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition shadow-lg"
             >
               PRINT RECEIPT
@@ -1337,10 +1348,10 @@
               {{( Math.abs(parseFloat(completedBalance))||0).toFixed(2) }}</span
             >
           </div>
-          <div class="flex justify-between font-bold mt-2 bg-green-100 text-green-800 rounded px-2 py-1">
+          <!-- <div class="flex justify-between font-bold mt-2 bg-green-100 text-green-800 rounded px-2 py-1">
             <span>ඔබ ලැබූ ලාභය:</span>
             <span>({{ page.props.currency || "Rs." }}) {{ completedItems.reduce((sum, item) => sum + ((item.market_price || 0) - (item.price || 0)) * item.quantity, 0).toFixed(2) }}</span>
-          </div>
+          </div> -->
           <div class="flex justify-between mt-1">
             <span>භාණ්ඩ ප්‍රමාණය:</span>
             <span>{{ completedItems.reduce((sum, item) => sum + item.quantity, 0) }}</span>
@@ -1348,7 +1359,7 @@
         </div>
         <hr class="my-4 border-black" />
         <p class="text-center text-xs">
-          {{ bill.footer_description || "Thank you for your business!" }}
+          {{ bill.footer_description || "Thank you for your business - POS System By Online මුදලාලි!" }}
         </p>
       </div>
     </div>
@@ -1437,6 +1448,9 @@ const selectedQuantity = ref(1);
 const barcodeInput = ref("");
 const barcodeField = ref(null);
 const productSearchField = ref(null);
+const cashPaymentButton = ref(null);
+const paymentAmountField = ref(null);
+const printReceiptButton = ref(null);
 const showSuccessModal = ref(false);
 const showPaymentModal = ref(false);
 const showProductModal = ref(false);
@@ -1629,6 +1643,14 @@ watch(filteredProducts, () => {
   embeddedVisibleCount.value = itemsPerPage.value;
   selectedProductIndex.value = -1;
   fillProductGridIfNeeded();
+});
+
+watch(showSuccessModal, (visible) => {
+  if (visible) {
+    nextTick(() => {
+      printReceiptButton.value?.focus();
+    });
+  }
 });
 
 // Keep the keyboard-selected product card visible when navigating with Left/Right
@@ -2012,7 +2034,11 @@ const openPaymentModal = () => {
     return;
   }
   showPaymentModal.value = true;
+  paymentMethod.value = 0;
   paymentAmount.value = balance.value > 0 ? balance.value.toFixed(2) : "";
+  nextTick(() => {
+    cashPaymentButton.value?.focus();
+  });
 };
 
 const selectPaymentMethod = (method) => {
@@ -2554,8 +2580,8 @@ const printReceipt = () => {
                     <thead>
                         <tr>
                             <th class="item-name">භාණ්ඩය</th>
-                            <th class="item-price">වෙළද මිල​</th>
-                            <th class="item-price">අපේ මිල​​</th>
+                            <th class="item-price"> මිල​</th>
+                             
                             <th class="item-price">ප්‍රමාණය​​</th>
                             <th class="item-total">එකතුව</th>
                         </tr>
@@ -2570,7 +2596,7 @@ const printReceipt = () => {
                             <tr class="item-data-row">
                                 <td></td>
                                 <td class="item-price">${(item.market_price||0).toFixed(2)}</td>
-                                <td class="item-price">${(item.price||0).toFixed(2)}</td>
+                               
                                 <td class="item-price">${item.quantity}</td>
                                 <td class="item-total">${(
                                   (item.price||0) * item.quantity
@@ -2635,10 +2661,6 @@ const printReceipt = () => {
         ).toFixed(2)}</span>
     </div>
 
-    <div class="total-row" style="color: #155724; font-weight: bold; padding: 4px 8px; border-radius: 4px; margin-top: 4px;border: 2px solid #000;">
-        <span>ඔබ ලැබූ ලාභය:</span>
-        <span>${page.props.currency || "රු"} ${completedItems.value.reduce((sum, item) => sum + ((item.market_price || 0) - (item.price || 0)) * item.quantity, 0).toFixed(2)}</span>
-    </div>
 
     <div class="total-row">
         <span>භාණ්ඩ ප්‍රමාණය:</span>
@@ -2649,7 +2671,7 @@ const printReceipt = () => {
                 <div class="footer">
 
                     <p>
-                        ${bill.footer_description || "Please visit us again!"}
+                        ${bill.footer_description || "Thank you for your business - POS System By Online මුදලාලි!"}
                         </p>
 
                 </div>
@@ -2775,12 +2797,10 @@ const handleKeyDown = (event) => {
   if (isF1) {
     // Prevent the browser's default F1 (help) behavior
     event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
 
-    // Don't steal focus while the user is actively typing/selecting in any form field
-    const activeElement = document.activeElement;
-    const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement?.tagName);
-
-    if (!isInputField && productSearchField.value) {
+    if (productSearchField.value) {
       productSearchField.value.focus();
       productSearchField.value.select();
     }
@@ -2905,8 +2925,9 @@ const handleKeyDown = (event) => {
     const activeElement = document.activeElement;
     const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement?.tagName);
     const isBarcodeField = activeElement === barcodeField.value;
+    const isProductSearchField = activeElement === productSearchField.value;
 
-    if ((!isInputField || isBarcodeField) && infiniteScrollProducts.value.length > 0) {
+    if ((!isInputField || isBarcodeField || isProductSearchField) && infiniteScrollProducts.value.length > 0) {
       event.preventDefault();
 
       // Move the highlighted product card left/right through the visible grid
@@ -2926,14 +2947,36 @@ const handleKeyDown = (event) => {
   }
 
   if (isEnter) {
-    // Don't trigger while typing anywhere (barcode/payment fields already handle their own Enter)
+    if (showSuccessModal.value) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      printAndClose();
+      return false;
+    }
+
+    if (showPaymentModal.value) {
+      return false;
+    }
+
+    // Enter should add the highlighted card, while a barcode value still takes
+    // priority and is handled by the barcode input's own @keyup.enter handler.
     const activeElement = document.activeElement;
     const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement?.tagName);
+    const isBarcodeField = activeElement === barcodeField.value;
+    const isEmptyBarcodeField = isBarcodeField && !barcodeInput.value.trim();
+    const isProductSearchField = activeElement === productSearchField.value;
 
-    if (!isInputField && selectedProductIndex.value !== -1) {
+    if (
+      selectedProductIndex.value !== -1 &&
+      (!isInputField || isEmptyBarcodeField || isProductSearchField) &&
+      !(isBarcodeField && barcodeInput.value.trim())
+    ) {
       const product = infiniteScrollProducts.value[selectedProductIndex.value];
       if (product) {
         event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
         addToCart(product);
       }
     }

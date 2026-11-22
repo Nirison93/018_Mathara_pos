@@ -816,7 +816,7 @@
         </div>
         <hr class="my-4 border-black" />
         <p class="text-center text-xs">
-          {{ bill.footer_description || "Thank you for your business!" }}
+          {{ bill.footer_description || "Thank you for your business - POS System By Online මුදලාලි!" }}
         </p>
       </div>
     </div>
@@ -1481,7 +1481,7 @@ const printQuotationAfterComplete = async () => {
                     </table>
                     <div class="footer">
                         <p>${
-                          billSetting.footer_description || "Thank you for your business!"
+                          billSetting.footer_description || "Thank you for your business - POS System By Online මුදලාලි!"
                         }</p>
                         <p style="margin-top: 8px; font-size: 9px;">Quotation printed on ${new Date().toLocaleString()}</p>
                     </div>

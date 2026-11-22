@@ -652,7 +652,7 @@ const printReceipt = (sale) => {
         </div>
 
         <div class="footer"><p><strong>${
-          bill.footer_description || "Thank you for your business!"
+          bill.footer_description || "Thank you for your business - POS System By Online මුදලාලි!"
         }</strong></p><p>${
     bill.footer_description ? "" : "Please visit us again!"
   }</p><p style="margin-top:6px; font-size:9px;">Powered by POS System</p></div>
