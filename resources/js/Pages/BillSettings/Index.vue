@@ -219,7 +219,7 @@
                     v-model="form.footer_description"
                     rows="2"
                     class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-[5px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="Thank you for your business!"
+                    placeholder="Thank you for your business! - POS System By Online මුදලාලි"
                   ></textarea>
                   <p
                     v-if="form.errors.footer_description"
